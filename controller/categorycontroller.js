@@ -11,12 +11,12 @@ cloudinary.config({
 
 const addCategory = async (req, res) => {
     const { name, slug, description } = req.body
-    console.log(req.files)
+    // console.log(req.files)
 
     const imagefile = req.files.catImage[0].path;
-    console.log({ imageUrl: imagefile })
+    // console.log({ imageUrl: imagefile })
     const iconfile = req.files.catIcon[0].path;
-    console.log({ name, slug, description, imagefile, iconfile })
+    // console.log({ name, slug, description, imagefile, iconfile })
 
     const cloudinaryImageResult = await cloudinary.uploader.upload(imagefile, { folder: 'Myckah' })
     const cloudinaryIconResult = await cloudinary.uploader.upload(iconfile, { folder: 'Myckah' })

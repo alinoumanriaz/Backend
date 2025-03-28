@@ -150,13 +150,23 @@ const logoutUser = async (req, res) => {
 
 const profileUser = async (req, res) => {
     const token = req.cookies.authToken
-    const decoded = jwt.verify(token, process.env.SECRET_TOKEN)
-    const [userResult] = await db.query("SELECT * FROM users WHERE id=?", [decoded.userId])
-    if (userResult.length > 0) {
-        const user = userResult[0]
-        console.log(user)
+    // console.log({ token: token })
+    try {
+        if (token) {
+            const decoded = jwt.verify(token, process.env.SECRET_TOKEN)
+            const [userResult] = await db.query("SELECT id,username,email,role,userImage,isVerified,createdAt FROM users WHERE id=?", [decoded.userId])
+            if (userResult.length > 0) {
+                const cUser = userResult[0]
+                res.status(200).json({ message: 'user profile data', cUser: cUser })
+            }
+        } else {
+            res.status(200).json({ message: 'user not logedIn' })
+        }
+    } catch (error) {
+        console.error('user logedIn', error)
+        console.log('got error when finding current user data')
     }
-    res.status(200).json({ message: 'user profile data' })
+
 }
 
 export const controller = {

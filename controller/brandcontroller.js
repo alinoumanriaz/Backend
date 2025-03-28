@@ -30,7 +30,7 @@ const addBrand = async (req, res) => {
 const brandList = async (req, res) => {
     try {
         const [brandList] = await db.query(`SELECT brands.id, brands.name, images.imageUrl, images.imageAlt FROM brands INNER JOIN images ON brands.imageId = images.id`)
-        console.log(brandList)
+        // console.log(brandList)
         res.status(200).json({ message: 'Got brand list successfully', result: brandList })
     } catch (error) {
         console.error('got error in geting brands list', error);

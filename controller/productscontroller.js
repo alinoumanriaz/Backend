@@ -96,25 +96,25 @@ const getAllProducts = async (req, res) => {
 
 const singleProduct = async (req, res) => {
     const slug = req.params.slug
-    console.log(req.params.slug)
+    // console.log(req.params.slug)
     try {
         const [productResult] = await db.query(`SELECT p.*, b.name AS brandname,b.slug AS brandslug,b.description AS branddescription,i.imageUrl AS brand_imageurl, i.imageAlt AS brand_imagealt FROM products p LEFT JOIN brands b ON p.brandId= b.id LEFT JOIN images i ON b.imageId=i.id WHERE p.slug=?`, [slug])
         if (productResult.length > 0) {
 
             const productData = productResult[0]
             const productId = productResult[0].id
-            console.log(productResult)
+            // console.log(productResult)
 
             const [productImages] = await db.query('SELECT * FROM product_images WHERE productId=?', [productId])
-            console.log(productImages)
+            // console.log(productImages)
             const [categoriesResult] = await db.query('SELECT c.id,c.name,c.slug,i.imageUrl,i.imageAlt FROM products_categories pc JOIN categories c ON pc.categoryId=c.id LEFT JOIN images i ON c.imageId=i.id WHERE productId=?', [productId])
-            console.log(categoriesResult)
+            // console.log(categoriesResult)
             const singleProductData ={
                 productData,
                 images:productImages,
                 category:categoriesResult
             }
-            console.log({singleProductData:singleProductData})
+            // console.log({singleProductData:singleProductData})
             res.status(200).json({ message: singleProductData })
         }
     } catch (error) {
