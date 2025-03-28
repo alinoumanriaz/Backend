@@ -7,7 +7,7 @@ import productRoutes from "./api/products.js"
 import brandRouter from "./api/brand.js"
 const app = express()
 
-app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:3001'], credentials: true }));
+app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:3001', 'http://192.168.0.117:3000'], credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
