@@ -17,4 +17,4 @@ app.use('/api/category', categoryRoutes)
 app.use('/api/product', productRoutes)
 app.use('/api/brand', brandRouter)
 
-app.listen(8080, () => console.log('server working on port 8080'))
+export default app;
