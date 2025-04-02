@@ -10,7 +10,7 @@ const db = mysql.createPool({
     password: process.env.PASSWORD,
     database: process.env.DATABASE,
     ssl: {
-        ca: process.env.CA_CERTIFICATE
+        ca: Buffer.from(process.env.CA_PEM_BASE64, 'base64').toString('utf-8')
     },
     waitForConnections: true,
     connectionLimit: 10,

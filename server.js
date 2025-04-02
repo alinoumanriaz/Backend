@@ -23,5 +23,5 @@ app.use('/api/brand', brandRouter)
 app.use('/api/wishlist', wishlistRouter)
 app.use('/api/order', orderRouters)
 
-// app.listen(serverPort, () => console.log('server working on port 8080'))
-export default app
+app.listen(serverPort, () => console.log('server working on port 8080'))
+// export default app
