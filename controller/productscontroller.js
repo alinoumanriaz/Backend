@@ -9,7 +9,7 @@ cloudinary.config({
 });
 
 const addProduct = async (req, res) => {
-    const { name, slug, description, price, stock, brand, category, salePrice, status } = req.body
+    const { name, slug, description, colorCode, colorName, gender, price, stock, brand, category, salePrice, status } = req.body
     const images = req.files
     // console.log({req:req.body})
 
@@ -25,7 +25,7 @@ const addProduct = async (req, res) => {
         }
 
 
-        const [productAddResult] = await db.query('INSERT INTO products (name,slug,description,price,stock,salePrice,status,brandId) values (?,?,?,?,?,?,?,?)', [name, slug, description, price, stock, salePrice, status, brand])
+        const [productAddResult] = await db.query('INSERT INTO products (name,slug,description,colorCode,colorName,gender,price,stock,salePrice,status,brandId) values (?,?,?,?,?,?,?,?,?,?,?)', [name, slug, description, colorCode, colorName, gender, price, stock, salePrice, status, brand])
         const productId = productAddResult.insertId
 
 

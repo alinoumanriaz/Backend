@@ -2,7 +2,6 @@ import db from "../database/database.js"
 import bcrypt from "bcrypt"
 import jwt from 'jsonwebtoken'
 import { sendEmail } from "../helper/mailsender.js"
-
 //user registor
 const registorUser = async (req, res) => {
     const { username, email, password } = req.body
@@ -65,9 +64,10 @@ const loginUser = async (req, res) => {
                     const jwtToken = jwt.sign(Token, process.env.SECRET_TOKEN, { expiresIn: "1d" })
                     res.cookie('authToken', jwtToken, {
                         httpOnly: true,
-                        secure: false,  // set to true if you're using HTTPS
-                        maxAge: 24 * 60 * 60 * 1000,
-                        sameSite: 'Lax', // Change 'Strict' to 'Lax' for cross-origin support
+                        secure: process.env.NODE_ENV === "production", // `true` in production, `false` in development
+                        sameSite: "Lax", // Allows cross-site cookies
+                        path: "/", // Ensure path is set correctly
+                        expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
                     })
                     return res.status(200).json({ message: "Login successful!" });
                 }
@@ -139,11 +139,12 @@ const newPasswordSave = async (req, res) => {
 }
 
 const logoutUser = async (req, res) => {
-    res.clearCookie('authToken', {
-        httpOnly: true, // makes it inaccessible to JavaScript
-        secure: process.env.NODE_ENV === 'production', // set secure flag in production (HTTPS)
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
-        sameSite: 'Strict' // helps with CSRF protection
+    console.log('logout api workig')
+    res.clearCookie("authToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "Lax",
+        path: "/" // Must match the cookie path used in login
     });
     return res.status(200).json({ message: 'Logged out successfully' });
 }

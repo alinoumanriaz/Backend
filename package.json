@@ -4,8 +4,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "vercel-build": "echo 'Build step for Vercel'"
+    "start": "nodemon server.js"
   },
   "keywords": [],
   "author": "",

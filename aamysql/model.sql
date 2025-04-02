@@ -30,7 +30,7 @@ CREATE TABLE `product_image` (
   `imageAlt` VARCHAR(255) NOT NULL,
   `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`productId`) REFERENCES `products` (`id`)
+  FOREIGN KEY (`productId`) REFERENCES `products` (`id`) ON DELETE CASCADE
 )
 
 CREATE TABLE `categories` (
@@ -115,22 +115,22 @@ CREATE TABLE `order_items` (
 
 
 -- Wishlist table (one-to-one relation between user and wishlist)
-CREATE TABLE `wishlists` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `userId` INT NOT NULL,
-  `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE
-);
+-- CREATE TABLE `wishlists` (
+--   `id` INT AUTO_INCREMENT PRIMARY KEY,
+--   `userId` INT NOT NULL,
+--   `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
+--   `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--   FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE
+-- );
 
 -- Wishlist Items table (many-to-many relationship between wishlist and products)
-CREATE TABLE `wishlist_items` (
+CREATE TABLE `wishlist` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `wishlistId` INT NOT NULL,
+  `userId` INT NOT NULL,
   `productId` INT NOT NULL,
   `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`wishlistId`) REFERENCES `wishlists`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`productId`) REFERENCES `products`(`id`) ON DELETE CASCADE
 );
 
@@ -165,26 +165,23 @@ CREATE TABLE `reviews` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `userId` INT NOT NULL,
   `productId` INT NOT NULL,
+  `images` 
   `rating` INT NOT NULL,
   `comment` TEXT,
   `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`userId`) REFERENCES `users`(`id`),
   FOREIGN KEY (`productId`) REFERENCES `products`(`id`) ON DELETE CASCADE
 );
 
--- Discounts (Coupons) table
-CREATE TABLE `discounts` (
+CREATE TABLE `review_images`(
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `code` VARCHAR(100) UNIQUE NOT NULL,
-  `discountPercentage` INT NOT NULL,
-  `startDate` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  `endDate` DATETIME,
+  `reviewId` INT NOT NULL,
+  `imagesUrl` VARCHAR(255) NOT NULL,
   `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
-
+  `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`reviewId`) REFERENCES `review` (`id`) ON DELETE CASCADE
+)
 
 
 ALTER TABLE `subcategories`
