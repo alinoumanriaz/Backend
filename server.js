@@ -7,7 +7,9 @@ import productRoutes from "./api/products.js"
 import brandRouter from "./api/brand.js"
 import wishlistRouter from "./api/wishlist.js"
 import orderRouters from "./api/order.js"
-const serverPort= process.env.SERVER_PORT || 8080;
+import env from 'dotenv'
+env.config();
+const serverPort = process.env.SERVER_PORT || 8080;
 const app = express()
 
 
@@ -23,5 +25,14 @@ app.use('/api/brand', brandRouter)
 app.use('/api/wishlist', wishlistRouter)
 app.use('/api/order', orderRouters)
 
-// app.listen(serverPort, () => console.log('server working on port 8080'))
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something went wrong!' });
+});
+
+if (process.env.NODE_ENV === 'localhost') {
+    app.listen(serverPort, () => console.log('server working on port 8080'));
+}
+
 export default app
