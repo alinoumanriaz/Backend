@@ -137,6 +137,7 @@ CREATE TABLE `wishlist` (
 -- Shipping Addresses table (one-to-many relation with users)
 CREATE TABLE `shipping_addresses` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `userId` INT NOT NULL,
   `fullname` VARCHAR(255) NOT NULL,
   `street` VARCHAR(255) NOT NULL,
   `city` VARCHAR(255) NOT NULL,
@@ -145,7 +146,8 @@ CREATE TABLE `shipping_addresses` (
   `country` VARCHAR(255) NOT NULL,
   `phone` VARCHAR(50),
   `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
 -- Payment table (one-to-one relation with orders)

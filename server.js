@@ -13,7 +13,7 @@ const serverPort = process.env.SERVER_PORT || 8080;
 const app = express()
 
 
-app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:3001', 'http://192.168.0.117:3000'], credentials: true }));
+app.use(cors({ origin: ['http://localhost:3000', 'https://us-clothing-dashboard.vercel.app/', 'http://localhost:3001', 'http://192.168.0.117:3000'], origin: true, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -24,6 +24,7 @@ app.use('/api/product', productRoutes)
 app.use('/api/brand', brandRouter)
 app.use('/api/wishlist', wishlistRouter)
 app.use('/api/order', orderRouters)
+app.use('/', (req, res, next) => res.json('Backend Working fine'))
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -32,7 +33,7 @@ app.use((err, req, res, next) => {
 });
 
 if (process.env.NODE_ENV === 'localhost') {
-    app.listen(serverPort, () => console.log('server working on port 8080'));
+    app.listen(serverPort, '0.0.0.0', () => console.log('server working on port 8080'));
 }
 
 export default app
