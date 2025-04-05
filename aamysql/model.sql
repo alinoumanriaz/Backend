@@ -92,8 +92,11 @@ CREATE TABLE `orders` (
   `userId` INT NOT NULL,
   `totalAmount` DECIMAL(10, 2) NOT NULL,
   `status` VARCHAR(50) DEFAULT 'pending',
+  `stripePayemntID` VARCHAR(255),
+  `paymentAmount` INT,
+  `paymentDate` TIMESTAMP,
   `shippingAddressId` INT NOT NULL,
-  `paymentMethod` VARCHAR(50) NOT NULL,
+  `paymentStatus` ENUM('Pending','Completed','Failed') DEFAULT Pending,
   `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE,
@@ -102,11 +105,12 @@ CREATE TABLE `orders` (
 
 -- Order Items table (many-to-many relationship between orders and products)
 CREATE TABLE `order_items` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `order_item_id` INT AUTO_INCREMENT PRIMARY KEY,
   `orderId` INT NOT NULL,
   `productId` INT NOT NULL,
   `quantity` INT NOT NULL,
-  `price` DECIMAL(10, 2) NOT NULL,
+  `unitPrice` INT NOT NULL,
+  `totalPrice` INT NOT NULL,
   `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (`orderId`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
