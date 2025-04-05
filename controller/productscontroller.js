@@ -9,9 +9,13 @@ cloudinary.config({
 });
 
 const addProduct = async (req, res) => {
-    const { name, slug, description, colorCode, colorName, gender, price, stock, brand, category, salePrice, status } = req.body
+    const { name, slug, description, colorCode, colorName, gender, price, stock, brand, category, salePrice, status, fabric } = req.body
+    console.log(brand)
     const images = req.files
-    // console.log({req:req.body})
+
+    if (images.length === 0) {
+        return res.status(500).json({ message: 'no image upload' })
+    }
 
     try {
         const uploadedImages = [];
@@ -25,7 +29,7 @@ const addProduct = async (req, res) => {
         }
 
 
-        const [productAddResult] = await db.query('INSERT INTO products (name,slug,description,colorCode,colorName,gender,price,stock,salePrice,status,brandId) values (?,?,?,?,?,?,?,?,?,?,?)', [name, slug, description, colorCode, colorName, gender, price, stock, salePrice, status, brand])
+        const [productAddResult] = await db.query('INSERT INTO products (name,slug,description,colorCode,colorName,gender,price,stock,salePrice,status,brandId,fabric) values (?,?,?,?,?,?,?,?,?,?,?,?)', [name, slug, description, colorCode, colorName, gender, price, stock, salePrice, status, brand, fabric])
         const productId = productAddResult.insertId
 
 
@@ -109,10 +113,10 @@ const singleProduct = async (req, res) => {
             // console.log(productImages)
             const [categoriesResult] = await db.query('SELECT c.id,c.name,c.slug,i.imageUrl,i.imageAlt FROM products_categories pc JOIN categories c ON pc.categoryId=c.id LEFT JOIN images i ON c.imageId=i.id WHERE productId=?', [productId])
             // console.log(categoriesResult)
-            const singleProductData ={
+            const singleProductData = {
                 productData,
-                images:productImages,
-                category:categoriesResult
+                images: productImages,
+                category: categoriesResult
             }
             // console.log({singleProductData:singleProductData})
             res.status(200).json({ message: singleProductData })

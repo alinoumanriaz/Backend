@@ -4,7 +4,6 @@ import multer from 'multer'
 const productRoutes = express.Router()
 import path from 'path'
 
-
 const storage = multer.diskStorage({
     filename: function (req, file, cb) {
         const originalName = file.originalname;
@@ -13,9 +12,10 @@ const storage = multer.diskStorage({
         cb(null, nameWithoutExt + '-' + uniqueSuffix)
     }
 })
+
 const upload = multer({ storage: storage })
 
-productRoutes.post('/addproduct', upload.array('images', 10), controller.addProduct)
+productRoutes.post('/addproduct', upload.array('images', 12), controller.addProduct)
 productRoutes.get('/allproducts', controller.getAllProducts)
 productRoutes.get('/:slug', controller.singleProduct)
 
