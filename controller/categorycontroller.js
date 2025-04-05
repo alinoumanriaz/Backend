@@ -10,24 +10,28 @@ cloudinary.config({
 
 
 const addCategory = async (req, res) => {
-    const { name, slug, description } = req.body
-    // console.log(req.files)
+    const { name, slug, description, parentCategory } = req.body
 
     const imagefile = req.files.catImage[0].path;
     // console.log({ imageUrl: imagefile })
-    const iconfile = req.files.catIcon[0].path;
+    // const iconfile = req.files.catIcon[0].path;
     // console.log({ name, slug, description, imagefile, iconfile })
 
     const cloudinaryImageResult = await cloudinary.uploader.upload(imagefile, { folder: 'Myckah' })
-    const cloudinaryIconResult = await cloudinary.uploader.upload(iconfile, { folder: 'Myckah' })
+    // const cloudinaryIconResult = await cloudinary.uploader.upload(iconfile, { folder: 'Myckah' })
 
     if (cloudinaryImageResult) {
         try {
-            const [uploadImageResult] = await db.query('INSERT INTO images ( imageUrl, imageAlt ) value (?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.display_name])
+            const [uploadImageResult] = await db.query('INSERT INTO images ( imageUrl, imageAlt ) value (?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename])
 
-            const [uploadIconResult] = await db.query('INSERT INTO images ( imageUrl, imageAlt ) value (?,?)', [cloudinaryIconResult.secure_url, cloudinaryIconResult.display_name])
+            // const [uploadIconResult] = await db.query('INSERT INTO images ( imageUrl, imageAlt ) value (?,?)', [cloudinaryIconResult.secure_url, cloudinaryIconResult.original_filename])
 
-            const [uploadCategoryResult] = await db.query('INSERT INTO categories ( name, slug, description, imageId, iconId) value (?,?,?,?,?)', [name, slug, description, uploadImageResult.insertId, uploadIconResult.insertId])
+            if (parentCategory) {
+                const [uploadCategoryResult] = await db.query('INSERT INTO categories ( name, slug, description, parentCategoryId, imageId) value (?,?,?,?,?)', [name, slug, description, parentCategory, uploadImageResult.insertId])
+            }else{
+                const [uploadCategoryResult] = await db.query('INSERT INTO categories ( name, slug, description, imageId) value (?,?,?,?)', [name, slug, description, uploadImageResult.insertId])
+            }
+            
             res.status(200).json({ message: 'category added successfully' })
         } catch (error) {
             console.error('category added api error', error)
@@ -46,16 +50,15 @@ const categoryList = async (req, res) => {
                 c.name AS categoryName,
                 c.slug AS categorySlug,
                 c.description AS categoryDescription,
+                parentc.name AS parentCategory,
                 img.imageUrl AS categoryImage,
-                img.imageAlt AS categoryImageAlt,
-                icon.imageUrl AS categoryIcon,
-                icon.imageAlt AS categoryIconAlt
+                img.imageAlt AS categoryImageAlt
             FROM 
                 categories c
             LEFT JOIN 
                 images img ON c.imageId = img.id
-            LEFT JOIN 
-                images icon ON c.iconId = icon.id
+            LEFT JOIN
+                categories parentc ON c.parentCategoryId = parentc.id
         `);
 
         // Format the response
@@ -64,13 +67,10 @@ const categoryList = async (req, res) => {
             name: category.categoryName,
             slug: category.categorySlug,
             description: category.categoryDescription,
+            parentCategory:category.parentCategory,
             image: {
                 url: category.categoryImage,
                 alt: category.categoryImageAlt,
-            },
-            icon: {
-                url: category.categoryIcon,
-                alt: category.categoryIconAlt,
             },
         }));
 

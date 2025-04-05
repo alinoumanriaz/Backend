@@ -15,7 +15,7 @@ const addBrand = async (req, res) => {
     try {
         const cloudinaryImageResult = await cloudinary.uploader.upload(brandImage, { folder: 'Myckah' })
         if (cloudinaryImageResult) {
-            const [addImageResult] = await db.query('INSERT INTO images (imageUrl,imageAlt) VALUE (?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.display_name])
+            const [addImageResult] = await db.query('INSERT INTO images (imageUrl,imageAlt) VALUE (?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename])
             const [addBrandResult] = await db.query('INSERT INTO brands ( name, slug, description, imageId) value (?,?,?,?)', [name, slug, description, addImageResult.insertId])
             res.status(200).json({ message: 'brand api worked' })
         }
