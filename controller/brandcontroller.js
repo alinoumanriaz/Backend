@@ -15,7 +15,7 @@ const addBrand = async (req, res) => {
     try {
         const cloudinaryImageResult = await cloudinary.uploader.upload(brandImage, { folder: 'Myckah' })
         if (cloudinaryImageResult) {
-            const [addImageResult] = await db.query('INSERT INTO images (imageUrl,imageAlt) VALUE (?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename])
+            const [addImageResult] = await db.query('INSERT INTO brand_images (imageUrl,imageAlt) VALUE (?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename])
             const [addBrandResult] = await db.query('INSERT INTO brands ( name, slug, description, imageId) value (?,?,?,?)', [name, slug, description, addImageResult.insertId])
             res.status(200).json({ message: 'brand api worked' })
         }
@@ -29,7 +29,7 @@ const addBrand = async (req, res) => {
 
 const brandList = async (req, res) => {
     try {
-        const [brandList] = await db.query(`SELECT brands.id, brands.name, images.imageUrl, images.imageAlt FROM brands INNER JOIN images ON brands.imageId = images.id`)
+        const [brandList] = await db.query(`SELECT brands.id, brands.name, brands.slug, bi.imageUrl, bi.imageAlt FROM brands INNER JOIN brand_images bi ON brands.imageId = bi.id`)
         // console.log(brandList)
         res.status(200).json({ message: 'Got brand list successfully', result: brandList })
     } catch (error) {

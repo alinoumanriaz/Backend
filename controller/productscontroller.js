@@ -61,7 +61,7 @@ const addProduct = async (req, res) => {
 const getAllProducts = async (req, res) => {
     try {
         // Fetch all products
-        const [products] = await db.query('SELECT * FROM products');
+        const [products] = await db.query('SELECT p.*, b.name AS brandName, b.slug AS brandSlug, pc.colorName AS colorName, pc.colorCode AS colorCode FROM products p INNER JOIN brands b ON p.brandId=b.id INNER JOIN product_color pc ON p.colorId=pc.id ');
 
         // For each product, fetch associated images and categories
         const productsWithDetails = await Promise.all(
@@ -74,16 +74,23 @@ const getAllProducts = async (req, res) => {
 
                 // Fetch categories for the product
                 const [categories] = await db.query(
-                    `SELECT c.id, c.name 
+                    `SELECT c.id, c.name, c.slug 
                      FROM categories c
                      INNER JOIN products_categories pc ON c.id = pc.categoryId
                      WHERE pc.productId = ?`,
                     [product.id]
                 );
 
+                const colordetail = {
+                    colorName: product.colorName,
+                    colorCode: product.colorCode
+
+                }
+
                 // Combine product details with images and categories
                 return {
                     ...product,
+                    colordetail: colordetail,
                     images,
                     categories,
                 };

@@ -140,6 +140,7 @@ const newPasswordSave = async (req, res) => {
 
 const logoutUser = async (req, res) => {
     console.log('logout api workig')
+    try {
     res.clearCookie("authToken", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -147,6 +148,10 @@ const logoutUser = async (req, res) => {
         path: "/" // Must match the cookie path used in login
     });
     return res.status(200).json({ message: 'Logged out successfully' });
+    } catch (error) {
+        console.log('logout not working', error)
+        return res.status(500).json({ message: 'logout not working' });
+    }
 }
 
 const profileUser = async (req, res) => {

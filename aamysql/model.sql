@@ -198,5 +198,30 @@ ADD CONSTRAINT `fk_subcategory_parent`
     ON DELETE CASCADE;  
 
 
+CREATE TABLE `brand_images`(
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `imageUrl` VARCHAR(255) NOT NULL,
+  `imageAlt` VARCHAR(255) NOT NULL,
+)
+
+CREATE TABLE `category_images`(
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `imageUrl` VARCHAR(255) NOT NULL,
+  `imageAlt` VARCHAR(255) NOT NULL,
+)
+
+CREATE TABLE `product_color`(
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `colorName` VARCHAR(255) not null,
+  `colorCode` VARCHAR(255) not null,
+)
+
+
+ALTER TABLE product
+ADD COLUMN color_id INT,                
+ADD CONSTRAINT fk_product_color        
+FOREIGN KEY (color_id)                  
+REFERENCES product_color(color_id);  
+
 
 

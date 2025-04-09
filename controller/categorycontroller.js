@@ -22,7 +22,7 @@ const addCategory = async (req, res) => {
 
     if (cloudinaryImageResult) {
         try {
-            const [uploadImageResult] = await db.query('INSERT INTO images ( imageUrl, imageAlt ) value (?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename])
+            const [uploadImageResult] = await db.query('INSERT INTO category_images ( imageUrl, imageAlt ) value (?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename])
 
             // const [uploadIconResult] = await db.query('INSERT INTO images ( imageUrl, imageAlt ) value (?,?)', [cloudinaryIconResult.secure_url, cloudinaryIconResult.original_filename])
 
@@ -51,12 +51,12 @@ const categoryList = async (req, res) => {
                 c.slug AS categorySlug,
                 c.description AS categoryDescription,
                 parentc.name AS parentCategory,
-                img.imageUrl AS categoryImage,
-                img.imageAlt AS categoryImageAlt
+                ci.imageUrl AS categoryImage,
+                ci.imageAlt AS categoryImageAlt
             FROM 
                 categories c
             LEFT JOIN 
-                images img ON c.imageId = img.id
+                category_images ci ON c.imageId = ci.id
             LEFT JOIN
                 categories parentc ON c.parentCategoryId = parentc.id
         `);
