@@ -21,5 +21,6 @@ const upload = multer({ storage: storage })
 categoryRoutes.post('/addcategory', upload.fields([{ name: 'catImage', maxCount: 1 }, { name: 'catIcon', maxCount: 1 }]), controller.addCategory)
 // categoryRoutes.post('/deletecategory', controller.deleteCategory)
 categoryRoutes.get('/categorylist', controller.categoryList)
+categoryRoutes.delete('/:id', controller.categoryDelete)
 
 export default categoryRoutes

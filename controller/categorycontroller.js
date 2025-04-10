@@ -83,7 +83,20 @@ const categoryList = async (req, res) => {
 
 }
 
+const categoryDelete = async (req, res) => {
+    try {
+        const categoryId = req.params.id
+        console.log('delete api category working', categoryId)
+        await db.query('DELETE FROM categories WHERE id = ?',[categoryId])
+        res.status(200).json({message:'category deleted successfully'})
+    } catch (error) {
+        console.error('Error in delete category', error)
+        res.status(500).json({message:'failed to delete categry'})
+    }
+}
+
 export const controller = {
     addCategory,
-    categoryList
+    categoryList,
+    categoryDelete
 } 

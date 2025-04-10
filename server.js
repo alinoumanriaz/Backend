@@ -13,7 +13,7 @@ const serverPort = process.env.SERVER_PORT || 8080;
 const app = express()
 
 
-app.use(cors({ origin: ['http://localhost:3000', 'https://us-clothing-dashboard.vercel.app/', 'http://localhost:3001', 'http://192.168.0.117:3000'], origin: true, credentials: true }));
+app.use(cors({ origin: ['http://localhost:3000','https://us-clothing-frontend.vercel.app' , 'https://us-clothing-dashboard.vercel.app/', 'http://localhost:3001', 'http://192.168.0.117:3000'], origin: true, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
