@@ -50,6 +50,7 @@ const categoryList = async (req, res) => {
                 c.name AS categoryName,
                 c.slug AS categorySlug,
                 c.description AS categoryDescription,
+                c.createdAt AS createdAt,
                 parentc.name AS parentCategory,
                 ci.imageUrl AS categoryImage,
                 ci.imageAlt AS categoryImageAlt
@@ -68,6 +69,7 @@ const categoryList = async (req, res) => {
             slug: category.categorySlug,
             description: category.categoryDescription,
             parentCategory:category.parentCategory,
+            createdAt:category.createdAt,
             image: {
                 url: category.categoryImage,
                 alt: category.categoryImageAlt,

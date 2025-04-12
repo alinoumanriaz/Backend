@@ -9,9 +9,9 @@ cloudinary.config({
 });
 
 const addProduct = async (req, res) => {
-    const { name, slug, description, colorCode, colorName, gender, price, stock, brand, category, salePrice, status, fabric } = req.body
-    console.log(brand)
+    const { name, slug, description, colorCode, colorName, gender, price, stock, category, salePrice, status, fabric } = req.body
     const images = req.files
+    console.log({ categories: category })
 
     if (images.length === 0) {
         return res.status(500).json({ message: 'no image upload' })
@@ -27,11 +27,8 @@ const addProduct = async (req, res) => {
                 altText: cloudinaryResult.original_filename
             })
         }
-
-
-        const [productAddResult] = await db.query('INSERT INTO products (name,slug,description,colorCode,colorName,gender,price,stock,salePrice,status,brandId,fabric) values (?,?,?,?,?,?,?,?,?,?,?,?)', [name, slug, description, colorCode, colorName, gender, price, stock, salePrice, status, brand, fabric])
+        const [productAddResult] = await db.query('INSERT INTO products (name,slug,description,gender,price,stock,salePrice,status,fabric,colorName,colorCode) values (?,?,?,?,?,?,?,?,?,?,?)', [name, slug, description, gender, price, stock, salePrice, status, fabric, colorName, colorCode])
         const productId = productAddResult.insertId
-
 
         const imageValues = uploadedImages.map(image => [
             productId, image.imageUrl, image.altText
@@ -40,14 +37,12 @@ const addProduct = async (req, res) => {
         const [addProductImages] = await db.query('INSERT INTO product_images (productId,imageUrl,altText) values ?', [imageValues])
 
 
-
         // covert string nmbeer array into integer nmber array
-        const categortId = category.map((item) => parseInt(item, 10))
+        const categories = Array.isArray(category) ? category : [category]
+        const categoryId = categories.map((item) => parseInt(item, 10))
 
-
-        // Step 5: Insert categories into 'product_categories' table
-        for (let i = 0; i < categortId.length; i++) {
-            await db.query('INSERT INTO products_categories (productId, categoryId) VALUES (?, ?)', [productId, categortId[i]]);
+        for (let i = 0; i < categoryId.length; i++) {
+            await db.query('INSERT INTO products_categories (productId, categoryId) VALUES (?, ?)', [productId, categoryId[i]]);
         }
         const [product] = await db.query('SELECT * FROM products WHERE id = ?', [productId]);
 
@@ -61,7 +56,7 @@ const addProduct = async (req, res) => {
 const getAllProducts = async (req, res) => {
     try {
         // Fetch all products
-        const [products] = await db.query('SELECT p.*, b.name AS brandName, b.slug AS brandSlug, pc.colorName AS colorName, pc.colorCode AS colorCode FROM products p INNER JOIN brands b ON p.brandId=b.id INNER JOIN product_color pc ON p.colorId=pc.id ');
+        const [products] = await db.query('SELECT * FROM products');
 
         // For each product, fetch associated images and categories
         const productsWithDetails = await Promise.all(
@@ -109,7 +104,7 @@ const singleProduct = async (req, res) => {
     const slug = req.params.slug
     // console.log(req.params.slug)
     try {
-        const [productResult] = await db.query(`SELECT p.*, b.name AS brandname,b.slug AS brandslug,b.description AS branddescription,i.imageUrl AS brand_imageurl, i.imageAlt AS brand_imagealt FROM products p LEFT JOIN brands b ON p.brandId= b.id LEFT JOIN images i ON b.imageId=i.id WHERE p.slug=?`, [slug])
+        const [productResult] = await db.query(`SELECT p.* FROM products p  WHERE p.slug=?`, [slug])
         if (productResult.length > 0) {
 
             const productData = productResult[0]

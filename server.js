@@ -4,7 +4,7 @@ import cors from 'cors'
 import userRoutes from './api/user.js'
 import categoryRoutes from "./api/category.js"
 import productRoutes from "./api/products.js"
-import brandRouter from "./api/brand.js"
+// import brandRouter from "./api/brand.js"
 import wishlistRouter from "./api/wishlist.js"
 import orderRouters from "./api/order.js"
 import env from 'dotenv'
@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/user', userRoutes)
 app.use('/api/category', categoryRoutes)
 app.use('/api/product', productRoutes)
-app.use('/api/brand', brandRouter)
+// app.use('/api/brand', brandRouter)
 app.use('/api/wishlist', wishlistRouter)
 app.use('/api/order', orderRouters)
 app.use('/', (req, res, next) => res.json('Backend Working fine'))
