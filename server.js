@@ -14,7 +14,7 @@ const serverPort = process.env.SERVER_PORT || 8080;
 const app = express()
 
 
-app.use(cors({ origin: ['http://localhost:3000','https://mirfah.com' , 'https://dashboard.mirfah.com/', 'http://localhost:3001', 'http://192.168.0.117:3000'], origin: true, credentials: true }));
+app.use(cors({ origin: ['http://localhost:3000', 'https://mirfah.com', 'https://www.mirfah.com/', 'https://dashboard.mirfah.com/', 'http://localhost:3001', 'http://192.168.0.117:3000'], origin: true, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
