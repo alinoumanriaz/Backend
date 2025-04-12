@@ -8,6 +8,7 @@ import productRoutes from "./api/products.js"
 import wishlistRouter from "./api/wishlist.js"
 import orderRouters from "./api/order.js"
 import env from 'dotenv'
+import reviewRoutes from "./api/review.js"
 env.config();
 const serverPort = process.env.SERVER_PORT || 8080;
 const app = express()
@@ -21,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/user', userRoutes)
 app.use('/api/category', categoryRoutes)
 app.use('/api/product', productRoutes)
-// app.use('/api/brand', brandRouter)
+app.use('/api/review', reviewRoutes)
 app.use('/api/wishlist', wishlistRouter)
 app.use('/api/order', orderRouters)
 app.use('/', (req, res, next) => res.json('Backend Working fine'))
