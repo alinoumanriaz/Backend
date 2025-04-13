@@ -4,7 +4,6 @@ import cors from 'cors'
 import userRoutes from './api/user.js'
 import categoryRoutes from "./api/category.js"
 import productRoutes from "./api/products.js"
-// import brandRouter from "./api/brand.js"
 import wishlistRouter from "./api/wishlist.js"
 import orderRouters from "./api/order.js"
 import env from 'dotenv'
@@ -14,7 +13,31 @@ const serverPort = process.env.SERVER_PORT || 8080;
 const app = express()
 
 
-app.use(cors({ origin: ['http://localhost:3000', 'https://mirfah.com', 'https://www.mirfah.com/', 'https://dashboard.mirfah.com/', 'http://localhost:3001', 'http://192.168.0.117:3000'], credentials: true }));
+const allowedOrigins = [
+    'http://localhost:3000',
+    'https://mirfah.com',
+    'https://www.mirfah.com',
+    'https://dashboard.mirfah.com',
+    'http://localhost:3001',
+    'http://192.168.0.117:3000'
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
+
+app.use((req, res, next) => {
+    console.log('Origin:', req.headers.origin);
+    next();
+});
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
