@@ -65,7 +65,8 @@ const loginUser = async (req, res) => {
                     res.cookie('authToken', jwtToken, {
                         httpOnly: true,
                         secure: process.env.NODE_ENV === "production", // `true` in production, `false` in development
-                        sameSite: "Lax", // Allows cross-site cookies
+                        sameSite: "None", 
+                        domain: '.mirfah.com', 
                         path: "/", // Ensure path is set correctly
                         expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
                     })
@@ -144,7 +145,7 @@ const logoutUser = async (req, res) => {
     res.clearCookie("authToken", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "Lax",
+        sameSite: "None",
         path: "/" // Must match the cookie path used in login
     });
     return res.status(200).json({ message: 'Logged out successfully' });
