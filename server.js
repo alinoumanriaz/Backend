@@ -34,6 +34,12 @@ app.use(cors({
 }));
 
 app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Origin');
+    next();
+  });
+
+app.use((req, res, next) => {
     console.log('Origin:', req.headers.origin);
     next();
 });
