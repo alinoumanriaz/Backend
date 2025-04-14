@@ -37,26 +37,18 @@ CREATE TABLE `categories` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `parentCategoryId` INT DEFAULT NULL,
   `name` VARCHAR(255) NOT NULL UNIQUE,
-  `imageId` INT NOT NULL,
-  `iconId` INT NOT NULL,
   `description` TEXT DEFAULT NULL,
   `slug` VARCHAR(255) NOT NULL UNIQUE,
   `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-  FOREIGN KEY (`imageId`) REFERENCES `images` (`id`)
-  FOREIGN KEY (`iconId`) REFERENCES `images` (`id`)
   FOREIGN KEY (`parentCategoryId`) REFERENCES `categories` (`id`)
 );
-
-CREATE TABLE `brands` (
+CREATE TABLE `category_images`(
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(255) NOT NULL UNIQUE,
-  `imageId` INT NOT NULL,
-  `slug` VARCHAR(255) NOT NULL UNIQUE,
-  `description` TEXT DEFAULT NULL,
-  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`imageId`) REFERENCES `images` (`id`)
+  `categoryId` INT DEFAULT NULL,
+  `imageUrl` VARCHAR(255) NOT NULL,
+  `imageAlt` VARCHAR(255) NOT NULL,
+  FOREIGN key (`categoryId`) REFERENCES `categories`(`id`) ON DELETE CASCADE
 )
 
 CREATE TABLE `product_categories` (
@@ -82,7 +74,6 @@ CREATE TABLE `products` (
   `isActive` BOOLEAN DEFAULT TRUE,
   `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-  FOREIGN key (`brandId`) REFERENCES `brands` (`id`)
 );
 
 

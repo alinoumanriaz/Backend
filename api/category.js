@@ -18,9 +18,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage })
 
 
-categoryRoutes.post('/addcategory', upload.fields([{ name: 'catImage', maxCount: 1 }, { name: 'catIcon', maxCount: 1 }]), controller.addCategory)
-// categoryRoutes.post('/deletecategory', controller.deleteCategory)
+categoryRoutes.post('/addcategory', upload.single('catImage'), controller.addCategory)
 categoryRoutes.get('/categorylist', controller.categoryList)
 categoryRoutes.delete('/:id', controller.categoryDelete)
+categoryRoutes.post('/editcategory', upload.single('catImage'), controller.editCategory)
 
 export default categoryRoutes
