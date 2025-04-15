@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage })
 
-productRoutes.post('/addproduct', upload.array('images', 12), controller.addProduct)
+productRoutes.post('/addproduct', upload.fields([{ name: 'image', maxCount: 10 }, { name: 'gallery', maxCount: 10 }]), controller.addProduct)
 productRoutes.get('/allproducts', controller.getAllProducts)
 productRoutes.get('/:slug', controller.singleProduct)
 

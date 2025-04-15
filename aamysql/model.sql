@@ -23,15 +23,7 @@ CREATE TABLE `image` (
   `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 )
 
-CREATE TABLE `product_image` (
-  `id`   INT AUTO_INCREMENT PRIMARY KEY,
-  `productId` INT NOT NULL,
-  `imageUrl` VARCHAR(255) NOT NULL,
-  `imageAlt` VARCHAR(255) NOT NULL,
-  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`productId`) REFERENCES `products` (`id`) ON DELETE CASCADE
-)
+
 
 CREATE TABLE `categories` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -65,17 +57,40 @@ CREATE TABLE `products` (
   `name` VARCHAR(255) NOT NULL,
   `slug` VARCHAR(255) NOT NULL UNIQUE,
   `description` TEXT DEFAULT NULL,
-  `brandId` INT DEFAULT NULL,
-  `price` DECIMAL(10, 2) NOT NULL,
-  `stock` INT NOT NULL,
   `status` ENUM('draft', 'published') DEFAULT 'draft',
-  `salePrice` DECIMAL(10, 2) DEFAULT NULL,
+  `fabric` VARCHAR(255),
+  `gender` ENUM('men','women','kids') DEFAULT 'men',
   `isFeatured` BOOLEAN DEFAULT FALSE,
   `isActive` BOOLEAN DEFAULT TRUE,
   `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE `product_variants` (
+  `variantId` INT AUTO_INCREMENT PRIMARY KEY,
+  `productId` INT NOT NULL,
+  `colorName` VARCHAR(100) NOT NULL,
+  `colorCode` VARCHAR(100) NOT NULL,
+  `sizes` JSON,
+  `price` INT NOT NULL,
+  `salePrice` INT DEFAULT NULL,
+  `stock` INT NOT NULL,
+  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`productId`) REFERENCES `products`(`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `product_images` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `productId` INT NOT NULL,
+  `variantId` INT NOT NULL,
+  `imageUrl` VARCHAR(255) NOT NULL,
+  `altText` VARCHAR(255) NOT NULL,
+  `isMain` BOOLEAN,
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`variantId`) REFERENCES `product_variants` (`variantId`) ON DELETE CASCADE
+  FOREIGN KEY (`productId`) REFERENCES `products`(`id`) ON DELETE CASCADE
+)
 
 -- Orders table
 CREATE TABLE `orders` (

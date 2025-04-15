@@ -9,91 +9,112 @@ cloudinary.config({
 });
 
 const addProduct = async (req, res) => {
-    const { name, slug, description, colorCode, colorName, gender, price, stock, category, salePrice, status, fabric } = req.body
-    const images = req.files
-    console.log({ categories: category })
-
-    if (images.length === 0) {
-        return res.status(500).json({ message: 'no image upload' })
-    }
-
+    const { name, slug, description, gender, category, status, fabric, variation } = req.body
     try {
-        const uploadedImages = [];
-        for (let i = 0; i < images.length; i++) {
-            const cloudinaryResult = await cloudinary.uploader.upload(images[i].path, { folder: 'Myckah' })
 
-            uploadedImages.push({
-                imageUrl: cloudinaryResult.secure_url,
-                altText: cloudinaryResult.original_filename
-            })
+        const [addedProduct] = await db.query(`INSERT INTO products (name, slug, description, status, gender, fabric) VALUES (?, ?, ?, ?, ?, ?)`, [name, slug, description, status, gender, fabric]);
+        const productId = addedProduct.insertId
+
+        // insert category data
+        const categoryList = Array.isArray(category) ? category : [category]
+        const categories = categoryList.map((item) => parseInt(item, 10))
+
+        categories.map(async (item) => {
+            await db.query('INSERT INTO products_categories (productId, categoryId) VALUES (?, ?)', [productId, item])
+        })
+
+        // 3. Insert variations
+        let imageIndex = 0;
+        for (const varient of variation) {
+            const [variantResult] = await db.query(`INSERT INTO product_variants (productId, colorName, colorCode, price, salePrice, stock, sizes) VALUES (?, ?, ?, ?, ?, ?, ?)`, [
+                productId,
+                varient.colorName,
+                varient.colorCode,
+                varient.price,
+                varient.salePrice || null,
+                varient.stock,
+                JSON.stringify(varient.sizes),
+            ]
+            );
+
+            const variantId = variantResult.insertId;
+
+            // 4. Add main image
+            // Upload main image to Cloudinary
+            const mainImage = req.files['image']?.[imageIndex];
+            if (mainImage) {
+                const uploadedMainImage = await cloudinary.uploader.upload(mainImage.path, { folder: 'product_images' });
+                await db.query(
+                    `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) VALUES (?, ?, ?, ?, ?)`,
+                    [productId, variantId, uploadedMainImage.secure_url, uploadedMainImage.original_filename, 1]
+                );
+            }
+
+            // 5. Add gallery images
+            const galleryImages = req.files['gallery'] || [];
+            for (const img of galleryImages) {
+                const uploadedMainImage = await cloudinary.uploader.upload(img.path, { folder: 'products' });
+                await db.query(
+                    `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) VALUES (?, ?, ?, ?, ?)`,
+                    [productId, variantId, uploadedMainImage.secure_url, uploadedMainImage.original_filename, 0]
+                );
+            }
+            imageIndex++;
         }
-        const [productAddResult] = await db.query('INSERT INTO products (name,slug,description,gender,price,stock,salePrice,status,fabric,colorName,colorCode) values (?,?,?,?,?,?,?,?,?,?,?)', [name, slug, description, gender, price, stock, salePrice, status, fabric, colorName, colorCode])
-        const productId = productAddResult.insertId
-
-        const imageValues = uploadedImages.map(image => [
-            productId, image.imageUrl, image.altText
-        ]);
-
-        const [addProductImages] = await db.query('INSERT INTO product_images (productId,imageUrl,altText) values ?', [imageValues])
-
-
-        // covert string nmbeer array into integer nmber array
-        const categories = Array.isArray(category) ? category : [category]
-        const categoryId = categories.map((item) => parseInt(item, 10))
-
-        for (let i = 0; i < categoryId.length; i++) {
-            await db.query('INSERT INTO products_categories (productId, categoryId) VALUES (?, ?)', [productId, categoryId[i]]);
-        }
-        const [product] = await db.query('SELECT * FROM products WHERE id = ?', [productId]);
-
-        res.status(200).json({ product: product })
+        return res.status(200).json({ message: 'Product added successfully' });
     } catch (error) {
         console.log(error)
-        res.status(500).json({ message: 'product adding error' })
+        return res.status(500).json({ message: 'product adding error' })
     }
 }
 
 const getAllProducts = async (req, res) => {
     try {
-        // Fetch all products
+        // 1. Get all products
         const [products] = await db.query('SELECT * FROM products');
-
-        // For each product, fetch associated images and categories
-        const productsWithDetails = await Promise.all(
-            products.map(async (product) => {
-                // Fetch images for the product
-                const [images] = await db.query(
-                    'SELECT imageUrl, altText FROM product_images WHERE productId = ?',
-                    [product.id]
-                );
-
-                // Fetch categories for the product
-                const [categories] = await db.query(
-                    `SELECT c.id, c.name, c.slug 
-                     FROM categories c
-                     INNER JOIN products_categories pc ON c.id = pc.categoryId
-                     WHERE pc.productId = ?`,
-                    [product.id]
-                );
-
-                const colordetail = {
-                    colorName: product.colorName,
-                    colorCode: product.colorCode
-
-                }
-
-                // Combine product details with images and categories
-                return {
-                    ...product,
-                    colordetail: colordetail,
-                    images,
-                    categories,
-                };
-            })
-        );
-
-        // Send the response
-        res.status(200).json({ products: productsWithDetails });
+    
+        const productList = [];
+    
+        for (const product of products) {
+          const productId = product.id;
+    
+          // 2. Get categories
+          const [categoryRows] = await db.query(`
+            SELECT c.id, c.name 
+            FROM product_categories pc
+            JOIN categories c ON pc.categoryId = c.id
+            WHERE pc.productId = ?
+          `, [productId]);
+    
+          // 3. Get variations
+          const [variants] = await db.query(`
+            SELECT * FROM product_variants WHERE productId = ?
+          `, [productId]);
+    
+          // 4. Get images (main + gallery)
+          const [images] = await db.query(`
+            SELECT * FROM product_images WHERE productId = ?
+          `, [productId]);
+    
+          // 5. Attach images to the relevant variant
+          const enrichedVariants = variants.map(variant => {
+            const variantImages = images.filter(img => img.variantId === variant.id);
+            return {
+              ...variant,
+              images: variantImages,
+              mainImage: variantImages.find(img => img.isMain === 1) || null,
+              gallery: variantImages.filter(img => img.isMain === 0)
+            };
+          });
+    
+          productList.push({
+            ...product,
+            categories: categoryRows,
+            variations: enrichedVariants
+          });
+        }
+    
+        res.status(200).json({message:'all products list'}, {productList:productList});
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: 'Error fetching products' });
