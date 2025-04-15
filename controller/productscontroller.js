@@ -55,7 +55,7 @@ const addProduct = async (req, res) => {
             const galleryImages = req.files.filter(f => f.fieldname === `gallery[${imageIndex}]`);
             console.log({ galleryImages: galleryImages })
             for (const img of galleryImages) {
-                const uploadedMainImage = await cloudinary.uploader.upload(img.path, { folder: 'products' });
+                const uploadedMainImage = await cloudinary.uploader.upload(img.path, { folder: 'product_images' });
                 await db.query(
                     `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) VALUES (?, ?, ?, ?, ?)`,
                     [productId, variantId, uploadedMainImage.secure_url, uploadedMainImage.original_filename, 0]
