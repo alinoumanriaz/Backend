@@ -65,8 +65,8 @@ const loginUser = async (req, res) => {
                     res.cookie('authToken', jwtToken, {
                         httpOnly: true,
                         secure: process.env.NODE_ENV === "production", // `true` in production, `false` in development
-                        sameSite: "None", 
-                        domain: '.mirfah.com', 
+                        sameSite: "None",
+                        domain: '.mirfah.com',
                         path: "/", // Ensure path is set correctly
                         expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
                     })
@@ -142,13 +142,13 @@ const newPasswordSave = async (req, res) => {
 const logoutUser = async (req, res) => {
     console.log('logout api workig')
     try {
-    res.clearCookie("authToken", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "None",
-        path: "/" // Must match the cookie path used in login
-    });
-    return res.status(200).json({ message: 'Logged out successfully' });
+        res.clearCookie("authToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "None",
+            path: "/" // Must match the cookie path used in login
+        });
+        return res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {
         console.log('logout not working', error)
         return res.status(500).json({ message: 'logout not working' });
@@ -164,17 +164,53 @@ const profileUser = async (req, res) => {
             const [userResult] = await db.query("SELECT id,username,email,role,userImage,isVerified,createdAt FROM users WHERE id=?", [decoded.userId])
             if (userResult.length > 0) {
                 const cUser = userResult[0]
-                res.status(200).json({ message: 'user profile data', cUser: cUser })
+                return res.status(200).json({ message: 'user profile data', cUser: cUser })
             }
         } else {
-            res.status(200).json({ message: 'user not logedIn' })
+            return res.status(200).json({ message: 'user not logedIn' })
         }
     } catch (error) {
-        console.error('user logedIn', error)
+        console.error('Fail getting current user', error)
         console.log('got error when finding current user data')
+        return res.status(500).json({ message: 'Fail getting current user' })
     }
 
 }
+
+const allUser = async (req, res) => {
+    try {
+        const [users] = await db.query(`SELECT id, username, email, phone, role, userImage, isVerified, createdAt FROM users`)
+        return res.status(200).json({ message: 'Got All user List', allUserList: users })
+    } catch (error) {
+        console.error('fail geting users list', error)
+        console.log('Got error when fetching users data')
+        return res.status(500).json({ message: 'Fail getting all user' })
+    }
+
+}
+const deleteUser = async (req, res) => {
+    const userId = req.params.id
+    try {
+        const [users] = await db.query(`DELETE from user WHERE id=?`,[userId])
+        return res.status(200).json({ message: 'User deleted Succussfully'})
+    } catch (error) {
+        console.error('fail to delete user', error)
+        console.log('Got error in deleting user')
+        return res.status(500).json({ message: 'Fail deleting user' })
+    }
+}
+
+// const statusUser = async ()=>{
+//     const userId = req.params.id
+//     try {
+//         const [users] = await db.query(`DELETE from user WHERE id=?`,[userId])
+
+//         return res.status(200).json({ message: 'User deleted Succussfully'})
+//     } catch (error) {
+//         console.error('fail to changing user status', error)
+//         return res.status(500).json({ message: 'Changing user status action fail' })
+//     }
+// }
 
 export const controller = {
     registorUser,
@@ -183,6 +219,8 @@ export const controller = {
     forgetPasswordUser,
     newPasswordSave,
     logoutUser,
-    profileUser
+    profileUser,
+    allUser,
+    deleteUser,
 }
 

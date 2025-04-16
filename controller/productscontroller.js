@@ -9,16 +9,23 @@ cloudinary.config({
 });
 
 const addProduct = async (req, res) => {
+    const { name, slug, description, gender, category, status, fabric, variation } = req.body
+    if (name === '' || slug === '' || gender === '' || fabric === '') {
+        return res.status(500).json({ message: 'Please enter product data' });
+    }
+    if (!category) {
+        return res.status(500).json({ message: 'Please select category' });
+    }
     try {
-        const { name, slug, description, gender, category, status, fabric, variation } = req.body
-
         const [addedProduct] = await db.query(`INSERT INTO products (name, slug, description, status, gender, fabric) VALUES (?, ?, ?, ?, ?, ?)`, [name, slug, description, status, gender, fabric]);
         const productId = addedProduct.insertId
 
         // insert category data
         const categoryList = Array.isArray(category) ? category : [category]
         const categories = categoryList.map((item) => parseInt(item, 10))
-
+        if (categories.length === 0) {
+            return res.status(500).json({ message: 'Category field is required' });
+        }
         categories.map(async (item) => {
             await db.query('INSERT INTO products_categories (productId, categoryId) VALUES (?, ?)', [productId, item])
         })
