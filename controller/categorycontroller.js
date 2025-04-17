@@ -100,26 +100,29 @@ const categoryDelete = async (req, res) => {
 }
 
 const editCategory = async (req, res) => {
-    const {id, name, slug, description, parentCategory}= req.body
-    console.log(id, name, slug, description, parentCategory)
-    console.log('edit api work')
+    const { id, name, slug, description, parentCategory } = req.body
     try {
 
-        const [checkSlug]=await db.query(`SELECT COUNT(*) AS count FROM categories WHERE slug=?`,[slug])
-        console.log({checkSlug:checkSlug})
+        if (parentCategory) {
+            await db.query(`UPDATE categories SET name=?, slug=?, description=?, parentCategory=? WHERE id=?`, [name, slug, description, parentCategory, id])
+            const imageFile = req.file?.path
+            if (imageFile) {
+                const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });
+                await db.query(`UPDATE category_images SET imageUrl=?, imageAlt=? WHERE categoryId=? `, [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, id])
+                return res.status(200).json({ message: 'category edit successfully' })
+            }
+            return res.status(200).json({ message: 'category edit successfully' })
+        } else {
+            await db.query(`UPDATE categories SET name=?, slug=?, description=? WHERE id=?`, [name, slug, description, id])
+            const imageFile = req.file?.path
+            if (imageFile) {
+                const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });
+                await db.query(`UPDATE category_images SET imageUrl=?, imageAlt=? WHERE categoryId=? `, [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, id])
+                return res.status(200).json({ message: 'category edit successfully' })
+            }
+            return res.status(200).json({ message: 'category edit successfully' })
+        }
 
-
-        // const imageFile = req.file.path
-        // if (imageFile) {
-        //     const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });   
-        //     console.log({cloudinaryImageResult:cloudinaryImageResult})
-        // }
-        // if (parentCategory) {
-        //     await db.query(`UPDATE categories SET (name,slug,description,parentCategory) VALUE (?,?,?,?)`,[name])
-        // }
-        
-
-        return res.status(200).json({ message: 'category edit successfully' })
     } catch (error) {
         console.error('Error in edit category', error)
         return res.status(500).json({ message: 'failed to edit categry' })
