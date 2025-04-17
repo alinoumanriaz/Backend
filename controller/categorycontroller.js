@@ -17,7 +17,10 @@ const addCategory = async (req, res) => {
             return res.status(500).json({ message: 'Duplicate slug' })
         }
 
-        const imageFile = req.file.path
+        const imageFile = req.file?.path
+        if (!imageFile) {
+            return res.status(500).json({ message: 'Image is required.' });
+        }
         const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });
         if (!cloudinaryImageResult) {
             return res.status(500).json({ message: 'Image upload to cloudinary failed' });
@@ -53,7 +56,7 @@ const categoryList = async (req, res) => {
                 c.name AS categoryName,
                 c.slug AS categorySlug,
                 c.description AS categoryDescription,
-                c.createdAt AS createdAt,
+                c.updatedAt AS updatedAt,
                 parentc.name AS parentCategory,
                 ci.imageUrl AS imageUrl,
                 ci.imageAlt AS imageAlt
@@ -72,7 +75,7 @@ const categoryList = async (req, res) => {
             slug: category.categorySlug,
             description: category.categoryDescription,
             parentCategory: category.parentCategory,
-            createdAt: category.createdAt,
+            updatedAt: category.updatedAt,
             image: {
                 url: category.imageUrl,
                 alt: category.imageAlt,

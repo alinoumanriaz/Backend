@@ -8,6 +8,7 @@ import wishlistRouter from "./api/wishlist.js";
 import orderRouters from "./api/order.js";
 import reviewRoutes from "./api/review.js";
 import env from 'dotenv';
+import fabricRoutes from "./api/fabric.js";
 env.config();
 
 const app = express();
@@ -59,6 +60,7 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ API Routes
 app.use('/api/user', userRoutes);
 app.use('/api/category', categoryRoutes);
+app.use('/api/fabric', fabricRoutes);
 app.use('/api/product', productRoutes);
 app.use('/api/review', reviewRoutes);
 app.use('/api/wishlist', wishlistRouter);

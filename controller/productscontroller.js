@@ -50,7 +50,6 @@ const addProduct = async (req, res) => {
             // 4. Add main image
             // Upload main image to Cloudinary
             const mainImage = req.files.find(f => f.fieldname === `image[${imageIndex}]`);;
-            console.log({ mainImage: mainImage })
             if (mainImage) {
                 const uploadedMainImage = await cloudinary.uploader.upload(mainImage.path, { folder: 'product_images' });
                 await db.query(
@@ -61,7 +60,6 @@ const addProduct = async (req, res) => {
 
             // 5. Add gallery images
             const galleryImages = req.files.filter(f => f.fieldname === `gallery[${imageIndex}]`);
-            console.log({ galleryImages: galleryImages })
             for (const img of galleryImages) {
                 const uploadedMainImage = await cloudinary.uploader.upload(img.path, { folder: 'product_images' });
                 await db.query(

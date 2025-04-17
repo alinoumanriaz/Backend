@@ -42,6 +42,21 @@ CREATE TABLE `category_images`(
   `imageAlt` VARCHAR(255) NOT NULL,
   FOREIGN key (`categoryId`) REFERENCES `categories`(`id`) ON DELETE CASCADE
 )
+CREATE TABLE `fabric` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL UNIQUE,
+  `description` TEXT DEFAULT NULL,
+  `slug` VARCHAR(255) NOT NULL UNIQUE,
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+CREATE TABLE `fabric_images`(
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `fabricId` INT DEFAULT NULL,
+  `imageUrl` VARCHAR(255) NOT NULL,
+  `imageAlt` VARCHAR(255) NOT NULL,
+  FOREIGN key (`fabricId`) REFERENCES `fabric`(`id`) ON DELETE CASCADE
+)
 
 CREATE TABLE `product_categories` (
   `productId` INT NOT NULL,
