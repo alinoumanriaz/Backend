@@ -18,7 +18,7 @@ const addProduct = async (req, res) => {
         return res.status(500).json({ message: 'Please select category' });
     }
     try {
-        const [addedProduct] = await db.query(`INSERT INTO products (name, slug, description, status, gender, fabric) VALUES (?, ?, ?, ?, ?, ?)`, [name, slug, description, status, gender, fabric]);
+        const [addedProduct] = await db.query(`INSERT INTO products (name, slug, description, status, gender, fabricId) VALUES (?, ?, ?, ?, ?, ?)`, [name, slug, description, status, gender, fabric]);
         const productId = addedProduct.insertId
 
         // insert category data
@@ -79,7 +79,7 @@ const addProduct = async (req, res) => {
 const getAllProducts = async (req, res) => {
     try {
         // 1. Get all products
-        const [products] = await db.query('SELECT * FROM products');
+        const [products] = await db.query('SELECT p.*, f.name AS fabricName FROM products p JOIN fabric f ON p.fabricId= f.id');
 
         const productList = [];
 

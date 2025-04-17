@@ -65,6 +65,13 @@ CREATE TABLE `product_categories` (
   FOREIGN KEY (`productId`) REFERENCES `products` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`categoryId`) REFERENCES `categories` (`id`) ON DELETE CASCADE
 );
+CREATE TABLE `product_fabrics` (
+  `productId` INT NOT NULL,
+  `fabricId` INT NOT NULL,
+  PRIMARY KEY (`productId`, `fabricId`),
+  FOREIGN KEY (`productId`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`fabricId`) REFERENCES `fabric` (`id`) ON DELETE CASCADE
+);
 
 
 CREATE TABLE `products` (
