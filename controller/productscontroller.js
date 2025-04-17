@@ -1,3 +1,4 @@
+import { clearScreenDown } from "readline";
 import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -160,8 +161,20 @@ const singleProduct = async (req, res) => {
     }
 
 }
+const deleteProduct = async (req, res) => {
+    try {
+        const id = req.params.id
+        await db.query(`DELETE from products WHERE id=?`,[id])
+
+        res.status(200).json({ message: 'product deleted successfully' })
+    } catch (error) {
+        console.error('single product api error', error)
+        res.status(500).json({ message: 'single product api error' })
+    }
+}
 export const controller = {
     addProduct,
     getAllProducts,
-    singleProduct
+    singleProduct,
+    deleteProduct
 }

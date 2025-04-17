@@ -18,5 +18,6 @@ const upload = multer({ storage: storage })
 productRoutes.post('/addproduct', upload.any(), controller.addProduct)
 productRoutes.get('/allproducts', controller.getAllProducts)
 productRoutes.get('/:slug', controller.singleProduct)
+productRoutes.delete('/:id', controller.deleteProduct)
 
 export default productRoutes

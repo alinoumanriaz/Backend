@@ -105,14 +105,19 @@ const editCategory = async (req, res) => {
     console.log('edit api work')
     try {
 
-        const imageFile = req.file.path
-        if (imageFile) {
-            const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });
-            console.log({cloudinaryImageResult:cloudinaryImageResult})
-        }
-        
-        
+        const [checkSlug]=await db.query(`SELECT COUNT(*) AS count FROM categories WHERE slug=?`,[slug])
+        console.log({checkSlug:checkSlug})
 
+
+        // const imageFile = req.file.path
+        // if (imageFile) {
+        //     const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });   
+        //     console.log({cloudinaryImageResult:cloudinaryImageResult})
+        // }
+        // if (parentCategory) {
+        //     await db.query(`UPDATE categories SET (name,slug,description,parentCategory) VALUE (?,?,?,?)`,[name])
+        // }
+        
 
         return res.status(200).json({ message: 'category edit successfully' })
     } catch (error) {

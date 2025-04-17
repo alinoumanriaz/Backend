@@ -65,8 +65,8 @@ const loginUser = async (req, res) => {
                     res.cookie('authToken', jwtToken, {
                         httpOnly: true,
                         secure: process.env.NODE_ENV === "production", // `true` in production, `false` in development
-                        sameSite: "None",
-                        domain: '.mirfah.com',
+                        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+                        domain: process.env.NODE_ENV === "production" ? ".mirfah.com" : "localhost",
                         path: "/", // Ensure path is set correctly
                         expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
                     })
@@ -145,8 +145,9 @@ const logoutUser = async (req, res) => {
         res.clearCookie("authToken", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "None",
-            path: "/" // Must match the cookie path used in login
+            sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+            domain: process.env.NODE_ENV === "production" ? ".mirfah.com" : "localhost",
+            path: "/"
         });
         return res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {
@@ -191,8 +192,8 @@ const allUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     const userId = req.params.id
     try {
-        const [users] = await db.query(`DELETE from user WHERE id=?`,[userId])
-        return res.status(200).json({ message: 'User deleted Succussfully'})
+        const [users] = await db.query(`DELETE from user WHERE id=?`, [userId])
+        return res.status(200).json({ message: 'User deleted Succussfully' })
     } catch (error) {
         console.error('fail to delete user', error)
         console.log('Got error in deleting user')
