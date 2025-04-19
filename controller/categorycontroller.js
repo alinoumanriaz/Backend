@@ -1,5 +1,12 @@
 import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
+import Redis from 'ioredis'
+
+const redis = new Redis({
+    host: 'redis.railway.internal',  // Your Redis host
+    port: 6379,  // Your Redis port
+    password: 'hbEtFKvZlBASbuAVJhHlhxSCtEKAEXLT',  // Optional, if Redis is password protected
+});
 
 // Configuration
 cloudinary.config({
@@ -7,6 +14,8 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+
 
 const addCategory = async (req, res) => {
     const { name, slug, description, parentCategory } = req.body
@@ -49,7 +58,18 @@ const addCategory = async (req, res) => {
 const categoryList = async (req, res) => {
 
     try {
-        // Fetch all categories with their image and icon details
+        const cacheKey = 'category_list'; // Cache key for categories
+
+        // First, check if the data is in Redis
+        const cachedData = await redis.get(cacheKey);
+        
+        if (cachedData) {
+            // If cached data exists, return it as the response
+            console.log('Returning cached data');
+            return res.status(200).json({ categoryList: JSON.parse(cachedData) });
+        }
+
+        // If no cached data, query the database for categories
         const [categories] = await db.query(`
             SELECT 
                 c.id AS categoryId,
@@ -68,7 +88,7 @@ const categoryList = async (req, res) => {
                 categories parentc ON c.parentCategoryId = parentc.id
         `);
 
-        // Format the response
+        // Format the response data
         const result = categories.map(category => ({
             id: category.categoryId,
             name: category.categoryName,
@@ -81,6 +101,9 @@ const categoryList = async (req, res) => {
                 alt: category.imageAlt,
             },
         }));
+
+        // Cache the result in Redis for 1 hour (3600 seconds)
+        await redis.setex(cacheKey, 3600, JSON.stringify(result));
 
         // Send the response
         return res.status(200).json({ categoryList: result });
