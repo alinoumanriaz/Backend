@@ -116,7 +116,7 @@ const editCategory = async (req, res) => {
             }
             return res.status(200).json({ message: 'category edit successfully' })
         } else {
-            await db.query(`UPDATE categories SET name=?, slug=?, description=? WHERE id=?`, [name, slug, description, id])
+            await db.query(`UPDATE categories SET name=?, slug=?, parentCategoryId=NULL, description=? WHERE id=?`, [name, slug, description, id])
             const imageFile = req.file?.path
             if (imageFile) {
                 const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });

@@ -88,7 +88,7 @@ const getAllProducts = async (req, res) => {
 
             // 2. Get categories
             const [categoryRows] = await db.query(`
-            SELECT c.id, c.name 
+            SELECT c.id, c.name, c.slug
             FROM products_categories pc
             JOIN categories c ON pc.categoryId = c.id
             WHERE pc.productId = ?
@@ -98,17 +98,15 @@ const getAllProducts = async (req, res) => {
             const [variants] = await db.query(`
             SELECT * FROM product_variants WHERE productId = ?
           `, [productId]);
-            console.log({ variants: variants })
 
             // 4. Get images (main + gallery)
             const [images] = await db.query(`
             SELECT * FROM product_images WHERE productId = ?
           `, [productId]);
-            console.log({ images: images })
+
             // 5. Attach images to the relevant variant
             const enrichedVariants = variants.map(variant => {
                 const variantImages = images.filter(img => img.variantId === variant.variantId);
-                console.log({ variantImages: variantImages })
                 return {
                     ...variant,
                     mainImage: variantImages.find(img => img.isMain === 1) || null,
@@ -134,35 +132,71 @@ const singleProduct = async (req, res) => {
     const slug = req.params.slug
     // console.log(req.params.slug)
     try {
-        const [productResult] = await db.query(`SELECT p.* FROM products p  WHERE p.slug=?`, [slug])
-        if (productResult.length > 0) {
+        const [productResult] = await db.query(`SELECT 
+            p.id AS id,
+            p.name AS name,
+            p.slug AS slug,
+            p.description AS description,
+            p.gender AS gender,
+            f.name AS fabricName,
+            f.slug AS fabricSlug
+            FROM products p
+            JOIN fabric f ON p.fabricId= f.id
+            WHERE p.slug=?`, [slug])
 
-            const productData = productResult[0]
+        if (!productResult) {
+            return res.status(500).json({ message: 'single product not found' })
+        } else {
             const productId = productResult[0].id
-            // console.log(productResult)
+            const productData = productResult[0]
+            console.log(productId)
+            const [variations] = await db.query(`SELECT
+                pv.variantId AS variantId,
+                pv.colorName AS colorName,
+                pv.colorCode AS colorCode,
+                pv.sizes AS sizes,
+                pv.price,
+                pv.salePrice,
+                pv.stock
+                FROM product_variants pv
+                WHERE pv.productId=?`, [productId])
 
-            const [productImages] = await db.query('SELECT * FROM product_images WHERE productId=?', [productId])
-            // console.log(productImages)
-            const [categoriesResult] = await db.query('SELECT c.id,c.name,c.slug,i.imageUrl,i.imageAlt FROM products_categories pc JOIN categories c ON pc.categoryId=c.id LEFT JOIN images i ON c.imageId=i.id WHERE productId=?', [productId])
-            // console.log(categoriesResult)
+            const [images] = await db.query(`
+                    SELECT variantId, imageUrl, altText, isMain
+                    FROM product_images
+                    WHERE variantId IN (?)
+                  `, [variations.map(v => v.variantId)])
+
+            const allVariations = variations.map(variant => {
+                const variantImages = images.filter(img => img.variantId === variant.variantId)
+                const mainImage = variantImages.find(img => img.isMain)
+                const gallery = variantImages.filter(img => !img.isMain)
+
+                return {
+                    ...variant,
+                    mainImage: mainImage?.imageUrl,
+                    gallery: gallery.map(g => g.imageUrl)
+                }
+            })
+
+
             const singleProductData = {
                 productData,
-                images: productImages,
-                category: categoriesResult
+                allVariations
             }
-            // console.log({singleProductData:singleProductData})
-            res.status(200).json({ message: singleProductData })
+            res.status(200).json({ message: 'fetching single Product Data', singleProductData: singleProductData })
         }
     } catch (error) {
         console.error('single product api error', error)
-        res.status(500).json({ message: 'single product api error' })
+        return res.status(500).json({ message: 'single product api error' })
     }
-
 }
+
+
 const deleteProduct = async (req, res) => {
     try {
         const id = req.params.id
-        await db.query(`DELETE from products WHERE id=?`,[id])
+        await db.query(`DELETE from products WHERE id=?`, [id])
 
         res.status(200).json({ message: 'product deleted successfully' })
     } catch (error) {
@@ -170,6 +204,8 @@ const deleteProduct = async (req, res) => {
         res.status(500).json({ message: 'single product api error' })
     }
 }
+
+
 export const controller = {
     addProduct,
     getAllProducts,
