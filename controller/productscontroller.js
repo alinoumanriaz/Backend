@@ -236,16 +236,63 @@ const singleProduct = async (req, res) => {
 
 
 const deleteProduct = async (req, res) => {
-    try {
-        const id = req.params.id
-        await db.query(`DELETE from products WHERE id=?`, [id])
+    const id = req.params.id;
+    let connection;
 
-        res.status(200).json({ message: 'product deleted successfully' })
+    try {
+        // Get a database connection and start transaction
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        // 1. First get all image URLs associated with this product
+        const [images] = await connection.query(
+            `SELECT imageUrl FROM product_images WHERE productId = ?`,
+            [id]
+        );
+
+        // 2. Delete images from Cloudinary in parallel
+        const deletePromises = images.map(async (image) => {
+            // Extract public_id from Cloudinary URL
+            // Cloudinary URLs typically look like: 
+            // https://res.cloudinary.com/<cloud_name>/<resource_type>/<type>/<public_id>.<format>
+            const urlParts = image.imageUrl.split('/');
+            const publicIdWithExtension = urlParts.slice(-2).join('/').split('.')[0];
+            const publicId = `product_images/${publicIdWithExtension}`;
+            
+            try {
+                return await cloudinary.uploader.destroy(publicId);
+            } catch (error) {
+                console.error(`Failed to delete image ${publicId}:`, error);
+            }
+        });
+
+        await Promise.all(deletePromises);
+        // 3. Delete all related records from database tables
+        // Order matters - delete child records first
+        await connection.query(`DELETE FROM product_images WHERE productId = ?`, [id]);
+        await connection.query(`DELETE FROM product_variants WHERE productId = ?`, [id]);
+        await connection.query(`DELETE FROM products_categories WHERE productId = ?`, [id]);
+        await connection.query(`DELETE FROM products WHERE id = ?`, [id]);
+
+        // Commit transaction if all operations succeeded
+        await connection.commit();
+
+        res.status(200).json({ message: 'Product and all associated images deleted successfully' });
     } catch (error) {
-        console.error('single product api error', error)
-        res.status(500).json({ message: 'single product api error' })
+        console.error('Product deletion error:', error);
+        
+        // Rollback transaction if any error occurred
+        if (connection) await connection.rollback();
+        
+        res.status(500).json({ 
+            message: 'Failed to delete product',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    } finally {
+        // Release the connection back to the pool
+        if (connection) connection.release();
     }
-}
+};
 
 
 export const controller = {
