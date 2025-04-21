@@ -18,7 +18,7 @@ const serverPort = process.env.SERVER_PORT || 8080;
 const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
-    'http://192.168.0.117:3000',
+    'http://192.168.0.110:3000',
     'https://dashboard.mirfah.com',
     'https://mirfah.com',
     'https://www.mirfah.com'

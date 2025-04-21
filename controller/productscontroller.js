@@ -10,69 +10,111 @@ cloudinary.config({
 });
 
 const addProduct = async (req, res) => {
-    const { name, slug, description, gender, category, status, fabric, variation } = req.body
-    if (name === '' || slug === '' || gender === '' || fabric === '') {
-        return res.status(500).json({ message: 'Please enter product data' });
+    const { name, slug, description, gender, category, status, fabric, variation, originalProductLink, clothType } = req.body
+    
+    // Validation (keep this part the same)
+    if (name === '' || slug === '' || gender === '' || fabric === '' || originalProductLink === '' || clothType === '') {
+        return res.status(400).json({ message: 'Please enter product data' }); // Changed to 400 for bad request
     }
     if (!category) {
-        return res.status(500).json({ message: 'Please select category' });
+        return res.status(400).json({ message: 'Please select category' });
     }
+
+    let connection;
     try {
-        const [addedProduct] = await db.query(`INSERT INTO products (name, slug, description, status, gender, fabricId) VALUES (?, ?, ?, ?, ?, ?)`, [name, slug, description, status, gender, fabric]);
-        const productId = addedProduct.insertId
+        // Get a connection from the pool
+        connection = await db.getConnection();
+        await connection.beginTransaction();
 
-        // insert category data
-        const categoryList = Array.isArray(category) ? category : [category]
-        const categories = categoryList.map((item) => parseInt(item, 10))
+        // 1. Insert main product
+        const [addedProduct] = await connection.query(
+            `INSERT INTO products (name, slug, description, status, gender, fabricId, originalProductLink, clothType) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
+            [name, slug, description, status, gender, fabric, originalProductLink, clothType]
+        );
+        const productId = addedProduct.insertId;
+
+        // 2. Insert categories in parallel
+        const categoryList = Array.isArray(category) ? category : [category];
+        const categories = categoryList.map(item => parseInt(item, 10));
+        
         if (categories.length === 0) {
-            return res.status(500).json({ message: 'Category field is required' });
+            await connection.rollback();
+            return res.status(400).json({ message: 'Category field is required' });
         }
-        categories.map(async (item) => {
-            await db.query('INSERT INTO products_categories (productId, categoryId) VALUES (?, ?)', [productId, item])
-        })
 
-        // 3. Insert variations
-        let imageIndex = 0;
-        for (const varient of variation) {
-            const [variantResult] = await db.query(`INSERT INTO product_variants (productId, colorName, colorCode, price, salePrice, stock, sizes) VALUES (?, ?, ?, ?, ?, ?, ?)`, [
-                productId,
-                varient.colorName,
-                varient.colorCode,
-                varient.price,
-                varient.salePrice || null,
-                varient.stock,
-                JSON.stringify(varient.sizes),
-            ]
+        await Promise.all(
+            categories.map(item => 
+                connection.query(
+                    'INSERT INTO products_categories (productId, categoryId) VALUES (?, ?)', 
+                    [productId, item]
+                )
+            )
+        );
+
+        // 3. Process variants and images in parallel
+        const variantPromises = variation.map(async (variant, index) => {
+            // Insert variant
+            const [variantResult] = await connection.query(
+                `INSERT INTO product_variants (productId, colorName, colorCode, price, salePrice, stock, sizes) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+                [
+                    productId,
+                    variant.colorName,
+                    variant.colorCode,
+                    variant.price,
+                    variant.salePrice || null,
+                    variant.stock,
+                    JSON.stringify(variant.sizes),
+                ]
             );
-
             const variantId = variantResult.insertId;
 
-            // 4. Add main image
-            // Upload main image to Cloudinary
-            const mainImage = req.files.find(f => f.fieldname === `image[${imageIndex}]`);;
+            // Process images for this variant
+            const mainImage = req.files.find(f => f.fieldname === `image[${index}]`);
+            const galleryImages = req.files.filter(f => f.fieldname === `gallery[${index}]`);
+
+            // Upload all images in parallel
+            const imageUploads = [];
+            
             if (mainImage) {
-                const uploadedMainImage = await cloudinary.uploader.upload(mainImage.path, { folder: 'product_images' });
-                await db.query(
-                    `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) VALUES (?, ?, ?, ?, ?)`,
-                    [productId, variantId, uploadedMainImage.secure_url, uploadedMainImage.original_filename, 1]
+                imageUploads.push(
+                    cloudinary.uploader.upload(mainImage.path, { folder: 'product_images' })
+                        .then(uploadedMainImage => 
+                            connection.query(
+                                `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) 
+                                VALUES (?, ?, ?, ?, ?)`,
+                                [productId, variantId, uploadedMainImage.secure_url, uploadedMainImage.original_filename, 1]
+                            )
+                        )
                 );
             }
 
-            // 5. Add gallery images
-            const galleryImages = req.files.filter(f => f.fieldname === `gallery[${imageIndex}]`);
-            for (const img of galleryImages) {
-                const uploadedMainImage = await cloudinary.uploader.upload(img.path, { folder: 'product_images' });
-                await db.query(
-                    `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) VALUES (?, ?, ?, ?, ?)`,
-                    [productId, variantId, uploadedMainImage.secure_url, uploadedMainImage.original_filename, 0]
-                );
-            }
-            imageIndex++;
-        }
+            // Process gallery images
+            imageUploads.push(...galleryImages.map(img =>
+                cloudinary.uploader.upload(img.path, { folder: 'product_images' })
+                    .then(uploadedImage => 
+                        connection.query(
+                            `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) 
+                            VALUES (?, ?, ?, ?, ?)`,
+                            [productId, variantId, uploadedImage.secure_url, uploadedImage.original_filename, 0]
+                        )
+                    )
+            ));
+
+            await Promise.all(imageUploads);
+        });
+
+        await Promise.all(variantPromises);
+        
+        await connection.commit();
         return res.status(200).json({ message: 'Product added successfully' });
     } catch (error) {
-        console.log(error)
-        return res.status(500).json({ message: 'product adding error' })
+        console.error('Product addition error:', error);
+        if (connection) await connection.rollback();
+        return res.status(500).json({ message: 'Error adding product' });
+    } finally {
+        if (connection) connection.release();
     }
 }
 
