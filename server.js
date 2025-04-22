@@ -76,10 +76,6 @@ app.use((err, req, res, next) => {
 });
 
 // ✅ Start the server
-if (process.env.NODE_ENV === 'localhost') {
-    app.listen(serverPort, '0.0.0.0', () => {
-        console.log(`🚀 Server running on http://localhost:${serverPort}`);
-    });
-}
-
-export default app;
+app.listen(serverPort, '0.0.0.0', () => {
+    console.log(`🚀 Server running on http://localhost:${serverPort}`);
+});
