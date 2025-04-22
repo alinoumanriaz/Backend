@@ -64,7 +64,10 @@ const loginUser = async (req, res) => {
                         userId: user.id,
                         username: user.username,
                         email: user.email,
-                        role: user.role
+                        userImage: user.userImage,
+                        role: user.role,
+                        isVerified: user.isVerified,
+                        createdAt: user.createdAt,
                     }
                     const jwtToken = jwt.sign(Token, process.env.SECRET_TOKEN, { expiresIn: "1d" })
                     res.cookie('authToken', jwtToken, {
@@ -75,7 +78,7 @@ const loginUser = async (req, res) => {
                         path: "/", // Ensure path is set correctly
                         expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
                     })
-                    return res.status(200).json({ message: "Login successful!" });
+                    return res.status(200).json({ message: "Login successful!", cUser: Token });
                 }
             } else {
                 res.status(202).json({ message: "incorrect password" })
@@ -239,7 +242,7 @@ const googleLogin = async (req, res) => {
         isVerified: payload.email_verified
     }
     // first check user already registor or not
-    const [checkuser] = await db.query(`SELECT * FROM users WHERE email=?`, [googleUserData.email])
+    const [checkuser] = await db.query(`SELECT id,username,email,role,userImage,isVerified,createdAt FROM users WHERE email=?`, [googleUserData.email])
     if (checkuser.length > 0) {
         const user = checkuser[0]
 
@@ -247,7 +250,10 @@ const googleLogin = async (req, res) => {
             userId: user.id,
             username: user.username,
             email: user.email,
-            role: user.role
+            userImage: user.userImage,
+            role: user.role,
+            isVerified: user.isVerified,
+            createdAt: user.createdAt,
         }
 
         const jwtToken = jwt.sign(Token, process.env.SECRET_TOKEN, { expiresIn: '1d' })
@@ -260,11 +266,11 @@ const googleLogin = async (req, res) => {
             path: "/", // Ensure path is set correctly
             expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
         })
-        return res.status(200).json({ message: "Login successful!" });
+        return res.status(200).json({ message: "Login successful!", cUser: Token });
 
     } else {
         const [userSaveResult] = await db.query(`INSERT INTO users (username, email, userImage, isVerified) VALUE (?,?,?,?)`, [googleUserData.username, googleUserData.email, googleUserData.userImage, googleUserData.isVerified])
-        const [newUser] = await db.query(`SELECT id,username,email,role FROM users WHERE id=?`, [userSaveResult.insertId])
+        const [newUser] = await db.query(`SELECT id,username,email,role,userImage,isVerified,createdAt FROM users WHERE id=?`, [userSaveResult.insertId])
 
         const user = newUser[0]
 
@@ -272,7 +278,11 @@ const googleLogin = async (req, res) => {
             userId: user.id,
             username: user.username,
             email: user.email,
-            role: user.role
+            userImage: user.userImage,
+            role: user.role,
+            isVerified: user.isVerified,
+            createdAt: user.createdAt,
+
         }
         const jwtToken = jwt.sign(Token, process.env.SECRET_TOKEN, { expiresIn: '1d' })
 
@@ -284,7 +294,7 @@ const googleLogin = async (req, res) => {
             path: "/", // Ensure path is set correctly
             expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
         })
-        return res.status(200).json({ message: "Login successful!" });
+        return res.status(200).json({ message: "Login successful!", cUser: Token });
     }
 }
 // const statusUser = async ()=>{
