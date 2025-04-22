@@ -1,5 +1,7 @@
 import db from "../database/database.js";
 import nodemailer from 'nodemailer';
+import env from "dotenv";
+env.config();
 
 export const sendEmail = async ({ email, emailType, userId }) => {
   // if (email) {
@@ -99,19 +101,12 @@ export const sendEmail = async ({ email, emailType, userId }) => {
             <p>This code is valid for the next 10 minutes. If you didn't request this, please ignore this email.</p>
           </div>
           <div class="email-footer">
-            <p>If you have any questions, feel free to <a href="mailto:support@example.com">contact our support team</a>.</p>
-            <p>&copy; 2024 Our Service. All Rights Reserved.</p>
+            <p>If you have any questions, feel free to <a href="mailto:support@mirfah.com">contact our support team</a>.</p>
+            <p>&copy; 2025 Our Service. All Rights Reserved.</p>
           </div>
         </div>
       </body>
     </html>`;
-
-  // const response = await resend.emails.send({
-  //     from: `"MYCKAh Support" <info@mirfah.com>`,
-  //     to: email,
-  //     subject: emailType === "VERIFY" ? "Email Verification" : "Reset Password",
-  //     html: htmlContent,
-  // })
 
 
   // Send email using Nodemailer

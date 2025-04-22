@@ -1,7 +1,8 @@
 
 import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
-
+import env from "dotenv";
+env.config()
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_API_NAME,
