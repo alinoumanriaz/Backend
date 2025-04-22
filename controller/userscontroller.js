@@ -2,6 +2,10 @@ import db from "../database/database.js"
 import bcrypt from "bcrypt"
 import jwt from 'jsonwebtoken'
 import { sendEmail } from "../helper/mailsender.js"
+import { OAuth2Client } from "google-auth-library"
+import env from "dotenv"
+env.config();
+
 //user registor
 const registorUser = async (req, res) => {
     const { username, email, password } = req.body
@@ -201,6 +205,87 @@ const deleteUser = async (req, res) => {
     }
 }
 
+const client = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    'postmessage' // Important: this must match the `redirect_uri` used by the frontend
+);
+const googleLogin = async (req, res) => {
+    const googleToken = req.body.code
+    if (!googleToken) {
+        return res.status(400).json({ message: 'Authorization code missing' });
+    }
+    const { tokens } = await client.getToken(googleToken)
+    const idToken = tokens.id_token;
+
+    if (!idToken) {
+        return res.status(400).json({ message: 'Google did not return an ID token' });
+    }
+
+
+    const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID
+    })
+
+    const payload = ticket.getPayload()
+    console.log({ payload: payload })
+
+    const googleUserData = {
+        username: payload.name,
+        email: payload.email,
+        userImage: payload.picture,
+        isVerified: payload.email_verified
+    }
+    // first check user already registor or not
+    const [checkuser] = await db.query(`SELECT * FROM users WHERE email=?`, [googleUserData.email])
+    if (checkuser.length > 0) {
+        const user = checkuser[0]
+
+        const Token = {
+            userId: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role
+        }
+
+        const jwtToken = jwt.sign(Token, process.env.SECRET_TOKEN, { expiresIn: '1d' })
+
+        res.cookie('authToken', jwtToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production", // `true` in production, `false` in development
+            sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+            domain: process.env.NODE_ENV === "production" ? ".mirfah.com" : "localhost",
+            path: "/", // Ensure path is set correctly
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
+        })
+        return res.status(200).json({ message: "Login successful!" });
+
+    } else {
+        const [userSaveResult] = await db.query(`INSERT INTO users (username, email, userImage, isVerified) VALUE (?,?,?,?)`, [googleUserData.username, googleUserData.email , googleUserData.userImage, googleUserData.isVerified])
+        const [newUser] = await db.query(`SELECT id,username,email,role FROM users WHERE id=?`, [userSaveResult.insertId])
+
+        const user = newUser[0]
+
+        const Token = {
+            userId: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role
+        }
+        const jwtToken = jwt.sign(Token, process.env.SECRET_TOKEN, { expiresIn: '1d' })
+
+        res.cookie('authToken', jwtToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production", // `true` in production, `false` in development
+            sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+            domain: process.env.NODE_ENV === "production" ? ".mirfah.com" : "localhost",
+            path: "/", // Ensure path is set correctly
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
+        })
+        return res.status(200).json({ message: "Login successful!" });
+    }
+}
 // const statusUser = async ()=>{
 //     const userId = req.params.id
 //     try {
@@ -223,5 +308,6 @@ export const controller = {
     profileUser,
     allUser,
     deleteUser,
+    googleLogin
 }
 

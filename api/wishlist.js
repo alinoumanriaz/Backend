@@ -5,5 +5,6 @@ const wishlistRouter = app.Router();
 
 wishlistRouter.post('/wishlistadd', controller.wishlistAdd )
 wishlistRouter.get('/currentuserwishlist', authentication, controller.currentUserWishlist )
+wishlistRouter.delete('/:id', controller.deleteWishlist )
 
 export default wishlistRouter

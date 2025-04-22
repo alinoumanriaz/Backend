@@ -12,6 +12,7 @@ userRoute.post('/logoutUser', controller.logoutUser)
 userRoute.get('/profile', controller.profileUser)
 userRoute.get('/alluser', controller.allUser)
 userRoute.delete('/:id', controller.deleteUser)
+userRoute.post('/google',controller.googleLogin)
 // userRoute.post('/:id', controller.statusUser)
 
 export default userRoute

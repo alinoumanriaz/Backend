@@ -1,4 +1,4 @@
-import { clearScreenDown } from "readline";
+
 import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
 
