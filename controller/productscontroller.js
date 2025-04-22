@@ -227,7 +227,7 @@ const singleProduct = async (req, res) => {
                 productData,
                 allVariations
             }
-            res.status(200).json({ message: 'fetching single Product Data', singleProductData: singleProductData })
+            return res.status(200).json({ message: 'fetching single Product Data', singleProductData: singleProductData })
         }
     } catch (error) {
         console.error('single product api error', error)
