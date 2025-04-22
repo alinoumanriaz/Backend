@@ -173,7 +173,7 @@ const getAllProducts = async (req, res) => {
 
 const singleProduct = async (req, res) => {
     const slug = req.params.slug
-    // console.log(req.params.slug)
+    console.log(slug)
     try {
         const [productResult] = await db.query(`SELECT 
             p.id AS id,
@@ -224,7 +224,7 @@ const singleProduct = async (req, res) => {
 
 
             const singleProductData = {
-                productData,
+                ...productData,
                 allVariations
             }
             return res.status(200).json({ message: 'fetching single Product Data', singleProductData: singleProductData })
