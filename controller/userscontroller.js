@@ -211,11 +211,11 @@ const client = new OAuth2Client(
     'postmessage' // Important: this must match the `redirect_uri` used by the frontend
 );
 const googleLogin = async (req, res) => {
-    const googleToken = req.body.code
-    if (!googleToken) {
+    const { code } = req.body
+    if (!code) {
         return res.status(400).json({ message: 'Authorization code missing' });
     }
-    const { tokens } = await client.getToken(googleToken)
+    const { tokens } = await client.getToken(code)
     const idToken = tokens.id_token;
 
     if (!idToken) {
@@ -262,7 +262,7 @@ const googleLogin = async (req, res) => {
         return res.status(200).json({ message: "Login successful!" });
 
     } else {
-        const [userSaveResult] = await db.query(`INSERT INTO users (username, email, userImage, isVerified) VALUE (?,?,?,?)`, [googleUserData.username, googleUserData.email , googleUserData.userImage, googleUserData.isVerified])
+        const [userSaveResult] = await db.query(`INSERT INTO users (username, email, userImage, isVerified) VALUE (?,?,?,?)`, [googleUserData.username, googleUserData.email, googleUserData.userImage, googleUserData.isVerified])
         const [newUser] = await db.query(`SELECT id,username,email,role FROM users WHERE id=?`, [userSaveResult.insertId])
 
         const user = newUser[0]
