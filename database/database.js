@@ -16,7 +16,7 @@ const db = mysql.createPool({
     password: process.env.PASSWORD,
     database: process.env.DATABASE,
     ssl: process.env.NODE_ENV === 'production' ?
-        { ca: Buffer.from(process.env.CA_CERTIFICATE, 'base64').toString('utf-8') }
+        { ca: readFileSync(process.env.CA_CERTIFICATE) }
         :
         { ca: readFileSync(process.env.CA_CERTIFICATE) }
     ,
