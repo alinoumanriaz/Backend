@@ -12,7 +12,7 @@ cloudinary.config({
 
 const addProduct = async (req, res) => {
     const { name, slug, description, gender, category, status, fabric, variation, originalProductLink, clothType } = req.body
-    
+
     // Validation (keep this part the same)
     if (name === '' || slug === '' || gender === '' || fabric === '' || originalProductLink === '' || clothType === '') {
         return res.status(400).json({ message: 'Please enter product data' }); // Changed to 400 for bad request
@@ -30,7 +30,7 @@ const addProduct = async (req, res) => {
         // 1. Insert main product
         const [addedProduct] = await connection.query(
             `INSERT INTO products (name, slug, description, status, gender, fabricId, originalProductLink, clothType) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [name, slug, description, status, gender, fabric, originalProductLink, clothType]
         );
         const productId = addedProduct.insertId;
@@ -38,16 +38,16 @@ const addProduct = async (req, res) => {
         // 2. Insert categories in parallel
         const categoryList = Array.isArray(category) ? category : [category];
         const categories = categoryList.map(item => parseInt(item, 10));
-        
+
         if (categories.length === 0) {
             await connection.rollback();
             return res.status(400).json({ message: 'Category field is required' });
         }
 
         await Promise.all(
-            categories.map(item => 
+            categories.map(item =>
                 connection.query(
-                    'INSERT INTO products_categories (productId, categoryId) VALUES (?, ?)', 
+                    'INSERT INTO products_categories (productId, categoryId) VALUES (?, ?)',
                     [productId, item]
                 )
             )
@@ -58,7 +58,7 @@ const addProduct = async (req, res) => {
             // Insert variant
             const [variantResult] = await connection.query(
                 `INSERT INTO product_variants (productId, colorName, colorCode, price, salePrice, stock, sizes) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
                     productId,
                     variant.colorName,
@@ -77,11 +77,11 @@ const addProduct = async (req, res) => {
 
             // Upload all images in parallel
             const imageUploads = [];
-            
+
             if (mainImage) {
                 imageUploads.push(
                     cloudinary.uploader.upload(mainImage.path, { folder: 'product_images' })
-                        .then(uploadedMainImage => 
+                        .then(uploadedMainImage =>
                             connection.query(
                                 `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) 
                                 VALUES (?, ?, ?, ?, ?)`,
@@ -94,7 +94,7 @@ const addProduct = async (req, res) => {
             // Process gallery images
             imageUploads.push(...galleryImages.map(img =>
                 cloudinary.uploader.upload(img.path, { folder: 'product_images' })
-                    .then(uploadedImage => 
+                    .then(uploadedImage =>
                         connection.query(
                             `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) 
                             VALUES (?, ?, ?, ?, ?)`,
@@ -107,7 +107,7 @@ const addProduct = async (req, res) => {
         });
 
         await Promise.all(variantPromises);
-        
+
         await connection.commit();
         return res.status(200).json({ message: 'Product added successfully' });
     } catch (error) {
@@ -204,6 +204,13 @@ const singleProduct = async (req, res) => {
                 FROM product_variants pv
                 WHERE pv.productId=?`, [productId])
 
+            const [categoryRows] = await db.query(`
+                    SELECT c.id, c.name, c.slug
+                    FROM products_categories pc
+                    JOIN categories c ON pc.categoryId = c.id
+                    WHERE pc.productId = ?
+                  `, [productId]);
+
             const [images] = await db.query(`
                     SELECT variantId, imageUrl, altText, isMain
                     FROM product_images
@@ -225,6 +232,7 @@ const singleProduct = async (req, res) => {
 
             const singleProductData = {
                 ...productData,
+                categories:categoryRows,
                 allVariations
             }
             return res.status(200).json({ message: 'fetching single Product Data', singleProductData: singleProductData })
@@ -259,7 +267,7 @@ const deleteProduct = async (req, res) => {
             const urlParts = image.imageUrl.split('/');
             const publicIdWithExtension = urlParts.slice(-2).join('/').split('.')[0];
             const publicId = `product_images/${publicIdWithExtension}`;
-            
+
             try {
                 return await cloudinary.uploader.destroy(publicId);
             } catch (error) {
@@ -281,11 +289,11 @@ const deleteProduct = async (req, res) => {
         res.status(200).json({ message: 'Product and all associated images deleted successfully' });
     } catch (error) {
         console.error('Product deletion error:', error);
-        
+
         // Rollback transaction if any error occurred
         if (connection) await connection.rollback();
-        
-        res.status(500).json({ 
+
+        res.status(500).json({
             message: 'Failed to delete product',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
