@@ -52,13 +52,17 @@ const loginUser = async (req, res) => {
 
         if (userResult.length > 0) {
             const user = userResult[0];
+            console.log({ userdata: user })
+            if (user.email && !user.password) {
+                return res.status(500).json({ message: "Your email already registor with google" })
+            }
             const validPassword = await bcrypt.compare(password, user.password)
 
             if (validPassword) {
                 if (!user.isVerified) {
                     const userId = user.id;
                     await sendEmail({ email, emailType: 'RESET', userId })
-                    res.status(501).json({ message: "user not verified" })
+                    return res.status(501).json({ message: "user not verified" })
                 } else {
                     const Token = {
                         userId: user.id,
@@ -81,14 +85,14 @@ const loginUser = async (req, res) => {
                     return res.status(200).json({ message: "Login successful!", cUser: Token });
                 }
             } else {
-                res.status(202).json({ message: "incorrect password" })
+                return res.status(202).json({ message: "incorrect password" })
             }
         } else {
-            res.status(203).json({ message: "user not found" })
+            return res.status(203).json({ message: "user not found" })
         }
 
     } else {
-        res.status(204).json({ message: "email and password both required" })
+        return res.status(204).json({ message: "email and password both required" })
     }
 }
 
