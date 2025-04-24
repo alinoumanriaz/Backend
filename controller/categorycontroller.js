@@ -54,9 +54,9 @@ const categoryList = async (req, res) => {
     try {
 
         const cacheKey = 'categoryList';
-        const redisClient = await getRedisClient()
+        const client = await getRedisClient()
         // 1️⃣ Check Redis cache first
-        const cachedData = await redisClient.get(cacheKey);
+        const cachedData = await client.get(cacheKey);
         if (cachedData) {
             console.log('✅ Returning category list from Redis');
             return res.status(200).json({ categoryList: JSON.parse(cachedData) });
@@ -97,7 +97,7 @@ const categoryList = async (req, res) => {
         }));
 
         // 3️⃣ Save to Redis with expiry (optional: 1 hour)
-        await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 60 * 60);
+        await client.set(cacheKey, JSON.stringify(result), 'EX', 60 * 60);
 
         // Send the response
         return res.status(200).json({ categoryList: result });
