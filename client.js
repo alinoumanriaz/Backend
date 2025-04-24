@@ -1,4 +1,6 @@
 import Redis from "ioredis";
+import env from 'dotenv';
+env.config()
 
 const redisClient = new Redis(process.env.REDIS_URL)
 
