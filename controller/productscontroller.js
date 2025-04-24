@@ -122,7 +122,7 @@ const addProduct = async (req, res) => {
 const getAllProducts = async (req, res) => {
     try {
         // 1. Get all products
-        const [products] = await db.query('SELECT p.*, f.name AS fabricName FROM products p JOIN fabric f ON p.fabricId= f.id');
+        const [products] = await db.query('SELECT p.*, f.name AS fabricName, f.slug AS fabricSlug FROM products p JOIN fabric f ON p.fabricId= f.id');
 
         const productList = [];
 
