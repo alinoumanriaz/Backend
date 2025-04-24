@@ -2,6 +2,7 @@ import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
 import env from "dotenv";
 env.config()
+import redisClient from "../client.js";
 
 // Configuration
 cloudinary.config({
@@ -51,6 +52,17 @@ const addCategory = async (req, res) => {
 const categoryList = async (req, res) => {
 
     try {
+
+        const cacheKey = 'categoryList';
+
+        // 1️⃣ Check Redis cache first
+        const cachedData = await redisClient.get(cacheKey);
+        if (cachedData) {
+            console.log('✅ Returning category list from Redis');
+            return res.status(200).json({ categoryList: JSON.parse(cachedData) });
+        }
+
+
         // Fetch all categories with their image and icon details
         const [categories] = await db.query(`
             SELECT 
@@ -83,6 +95,9 @@ const categoryList = async (req, res) => {
                 alt: category.imageAlt,
             },
         }));
+
+        // 3️⃣ Save to Redis with expiry (optional: 1 hour)
+        await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 60 * 60);
 
         // Send the response
         return res.status(200).json({ categoryList: result });
