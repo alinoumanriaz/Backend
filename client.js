@@ -1,13 +1,6 @@
 import Redis from "ioredis";
 
-
-let redisClient;
-// Replace with your real credentials
-if (process.env.NODE_ENV === 'localhost') {
-    redisClient = new Redis('redis://default:YxGlJvCArTuEcWwRYiAPTNepdXuRgwJz@tramway.proxy.rlwy.net:14852');
-  } else {
-    redisClient = new Redis('redis://default:YxGlJvCArTuEcWwRYiAPTNepdXuRgwJz@redis.railway.internal:6379');
-  }
+const redisClient = new Redis(process.env.REDIS_URL)
 
 redisClient.on('connect', () => {
     console.log('✅ Connected to Redis on Railway');
