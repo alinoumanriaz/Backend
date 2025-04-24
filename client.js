@@ -1,4 +1,3 @@
-
 import env from 'dotenv';
 import { createClient } from 'redis';
 env.config()
@@ -13,4 +12,11 @@ redisClient.on('error', (err) => {
     console.error('❌ Redis connection error:', err);
 });
 
-export default redisClient
+export const getRedisClient = async () => {
+    if (!isConnected) {
+        await redisClient.connect(); // connect once
+        isConnected = true;
+        console.log('✅ Redis connected');
+    }
+    return redisClient;
+};

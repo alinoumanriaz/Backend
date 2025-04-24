@@ -1,8 +1,9 @@
 import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
 import env from "dotenv";
+import { getRedisClient } from "../client.js";
 env.config()
-import redisClient from "../client.js";
+getRedisClient
 
 // Configuration
 cloudinary.config({
@@ -54,7 +55,7 @@ const categoryList = async (req, res) => {
     try {
 
         const cacheKey = 'categoryList';
-
+        const redisClient = await getRedisClient()
         // 1️⃣ Check Redis cache first
         const cachedData = await redisClient.get(cacheKey);
         if (cachedData) {
