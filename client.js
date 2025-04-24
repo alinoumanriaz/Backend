@@ -2,7 +2,9 @@ import Redis from "ioredis";
 import env from 'dotenv';
 env.config()
 
-const redisClient = new Redis(process.env.REDIS_URL)
+const redisClient = new Redis(process.env.REDIS_URL + '?family=0');
+
+const ping = await redisClient.ping();
 
 redisClient.on('connect', () => {
     console.log('✅ Connected to Redis on Railway');
