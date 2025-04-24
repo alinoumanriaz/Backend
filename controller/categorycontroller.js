@@ -59,7 +59,6 @@ const categoryList = async (req, res) => {
         const cachedData = await redisClient.get(cacheKey);
         if (cachedData) {
             console.log('✅ Returning category list from Redis');
-            clg
             return res.status(200).json({ categoryList: JSON.parse(cachedData) });
         }
 
