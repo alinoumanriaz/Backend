@@ -3,7 +3,6 @@ import { v2 as cloudinary } from 'cloudinary';
 import env from "dotenv";
 import { getRedisClient } from "../client.js";
 env.config()
-getRedisClient
 
 // Configuration
 cloudinary.config({
