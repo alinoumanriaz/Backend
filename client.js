@@ -4,9 +4,7 @@ env.config()
 
 const redisClient = new createClient({ url: process.env.REDIS_URL, });
 
-redisClient.on('connect', () => {
-    console.log('✅ Connected to Redis on Railway');
-});
+let isConnected = false;
 
 redisClient.on('error', (err) => {
     console.error('❌ Redis connection error:', err);
