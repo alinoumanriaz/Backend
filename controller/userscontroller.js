@@ -216,91 +216,98 @@ const deleteUser = async (req, res) => {
 const client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    'postmessage' // Important: this must match the `redirect_uri` used by the frontend
+    'https://www.mirfah.com' // ✅ production redirect URI must match the frontend
 );
+
 const googleLogin = async (req, res) => {
-    const { code } = req.body
-    if (!code) {
-        return res.status(400).json({ message: 'Authorization code missing' });
-    }
-    const { tokens } = await client.getToken(code)
-    const idToken = tokens.id_token;
+    try {
+        const { code } = req.body;
+        if (!code) {
+            return res.status(400).json({ message: 'Authorization code missing' });
+        }
 
-    if (!idToken) {
-        return res.status(400).json({ message: 'Google did not return an ID token' });
-    }
+        // Exchange code for tokens
+        const { tokens } = await client.getToken(code);
+        const idToken = tokens.id_token;
 
+        if (!idToken) {
+            return res.status(400).json({ message: 'Google did not return an ID token' });
+        }
 
-    const ticket = await client.verifyIdToken({
-        idToken,
-        audience: process.env.GOOGLE_CLIENT_ID
-    })
+        // Verify ID token
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
 
-    const payload = ticket.getPayload()
-    console.log({ payload: payload })
+        const payload = ticket.getPayload();
+        console.log('[Google Auth Payload]', payload);
 
-    const googleUserData = {
-        username: payload.name,
-        email: payload.email,
-        userImage: payload.picture,
-        isVerified: payload.email_verified
-    }
-    // first check user already registor or not
-    const [checkuser] = await db.query(`SELECT id,username,email,role,userImage,isVerified,createdAt FROM users WHERE email=?`, [googleUserData.email])
-    if (checkuser.length > 0) {
-        const user = checkuser[0]
+        const googleUserData = {
+            username: payload.name,
+            email: payload.email,
+            userImage: payload.picture,
+            isVerified: payload.email_verified
+        };
 
-        const Token = {
+        // Check if user already exists
+        const [checkuser] = await db.query(
+            `SELECT id, username, email, role, userImage, isVerified, createdAt FROM users WHERE email=?`,
+            [googleUserData.email]
+        );
+
+        let user;
+
+        if (checkuser.length > 0) {
+            user = checkuser[0];
+        } else {
+            const [userSaveResult] = await db.query(
+                `INSERT INTO users (username, email, userImage, isVerified) VALUES (?, ?, ?, ?)`,
+                [
+                    googleUserData.username,
+                    googleUserData.email,
+                    googleUserData.userImage,
+                    googleUserData.isVerified
+                ]
+            );
+
+            const [newUser] = await db.query(
+                `SELECT id, username, email, role, userImage, isVerified, createdAt FROM users WHERE id=?`,
+                [userSaveResult.insertId]
+            );
+
+            user = newUser[0];
+        }
+
+        const tokenPayload = {
             userId: user.id,
             username: user.username,
             email: user.email,
             userImage: user.userImage,
             role: user.role,
             isVerified: user.isVerified,
-            createdAt: user.createdAt,
-        }
+            createdAt: user.createdAt
+        };
 
-        const jwtToken = jwt.sign(Token, process.env.SECRET_TOKEN, { expiresIn: '1d' })
+        const jwtToken = jwt.sign(tokenPayload, process.env.SECRET_TOKEN, { expiresIn: '1d' });
 
+        // Send auth cookie
         res.cookie('authToken', jwtToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production", // `true` in production, `false` in development
-            sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-            domain: process.env.NODE_ENV === "production" ? ".mirfah.com" : "localhost",
-            path: "/", // Ensure path is set correctly
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+            domain: process.env.NODE_ENV === 'production' ? '.mirfah.com' : 'localhost',
+            path: '/',
             expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
-        })
-        return res.status(200).json({ message: "Login successful!", cUser: Token });
+        });
 
-    } else {
-        const [userSaveResult] = await db.query(`INSERT INTO users (username, email, userImage, isVerified) VALUE (?,?,?,?)`, [googleUserData.username, googleUserData.email, googleUserData.userImage, googleUserData.isVerified])
-        const [newUser] = await db.query(`SELECT id,username,email,role,userImage,isVerified,createdAt FROM users WHERE id=?`, [userSaveResult.insertId])
+        return res.status(200).json({ message: 'Login successful!', cUser: tokenPayload });
 
-        const user = newUser[0]
-
-        const Token = {
-            userId: user.id,
-            username: user.username,
-            email: user.email,
-            userImage: user.userImage,
-            role: user.role,
-            isVerified: user.isVerified,
-            createdAt: user.createdAt,
-
-        }
-        const jwtToken = jwt.sign(Token, process.env.SECRET_TOKEN, { expiresIn: '1d' })
-
-        res.cookie('authToken', jwtToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production", // `true` in production, `false` in development
-            sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-            domain: process.env.NODE_ENV === "production" ? ".mirfah.com" : "localhost",
-            path: "/", // Ensure path is set correctly
-            expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
-        })
-        return res.status(200).json({ message: "Login successful!", cUser: Token });
+    } catch (error) {
+        console.error('[Google Login Error]', error);
+        return res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
-}
+};
 // const statusUser = async ()=>{
 //     const userId = req.params.id
 //     try {
