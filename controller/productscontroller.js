@@ -122,8 +122,7 @@ const addProduct = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
     try {
-        let cacheKey = 'allProducts'
-
+        const cacheKey = 'allProducts'
         const client = await getRedisClient()
         const cacheData = await client.get(cacheKey)
         if (cacheData) {
