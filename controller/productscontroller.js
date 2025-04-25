@@ -122,10 +122,10 @@ const addProduct = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
     try {
-        let cacheKey = `allProducts`
+        let cacheKey = 'allProducts'
 
         const client = await getRedisClient()
-        const cacheData = await client(cacheKey)
+        const cacheData = await client.get(cacheKey)
         if (cacheData) {
             console.log('✅ Returning product list from Redis');
             return res.status(200).json({ allProducts: JSON.parse(cacheKey) })
@@ -173,7 +173,7 @@ const getAllProducts = async (req, res) => {
             });
         }
 
-        await client.set(cacheKey, JSON.stringify(productList))
+        await client.set(cacheKey, JSON.stringify(productList));
         
         res.status(200).json({ message: 'all products list', allProducts: productList });
     } catch (error) {

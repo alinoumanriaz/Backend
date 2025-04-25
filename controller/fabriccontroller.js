@@ -46,9 +46,9 @@ const addFabric = async (req, res) => {
 const fabricList = async (req, res) => {
 
     try {
-        const cacheKey = `fabricList`
+        const cacheKey = 'fabricList'
         const client = await getRedisClient()
-        const cacheData = await client(cacheKey)
+        const cacheData = await client.get(cacheKey)
         if (cacheData) {
             console.log('✅ Returning fabric list from Redis');
             return res.status(200).json({ fabricList: JSON.parse(cacheData) })
@@ -82,9 +82,9 @@ const fabricList = async (req, res) => {
             },
         }));
 
-        await client.set(cacheKey, JSON.stringify(result))
+        await client.set(cacheKey, JSON.stringify(result));
         // Send the response
-        return res.status(200).json({ cacheKey: result });
+        return res.status(200).json({ fabricList: result });
     } catch (error) {
         console.error('Error fetching fabrics:', error);
         return res.status(500).json({ message: 'Failed to fetch fabrics' });
