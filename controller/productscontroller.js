@@ -2,6 +2,7 @@
 import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
 import env from "dotenv";
+import { getRedisClient } from "../client.js";
 env.config()
 
 cloudinary.config({
@@ -121,6 +122,14 @@ const addProduct = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
     try {
+        let cacheKey = `allProducts`
+
+        const client = await getRedisClient()
+        const cacheData = await client(cacheKey)
+        if (cacheData) {
+            console.log('✅ Returning product list from Redis');
+            return res.status(200).json({ allProducts: JSON.parse(cacheKey) })
+        }
         // 1. Get all products
         const [products] = await db.query('SELECT p.*, f.name AS fabricName, f.slug AS fabricSlug FROM products p JOIN fabric f ON p.fabricId= f.id');
 
@@ -164,6 +173,8 @@ const getAllProducts = async (req, res) => {
             });
         }
 
+        await client.set(cacheKey, JSON.stringify(productList))
+        
         res.status(200).json({ message: 'all products list', allProducts: productList });
     } catch (error) {
         console.log(error);
@@ -232,7 +243,7 @@ const singleProduct = async (req, res) => {
 
             const singleProductData = {
                 ...productData,
-                categories:categoryRows,
+                categories: categoryRows,
                 allVariations
             }
             return res.status(200).json({ message: 'fetching single Product Data', singleProductData: singleProductData })

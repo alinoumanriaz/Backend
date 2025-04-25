@@ -96,8 +96,8 @@ const categoryList = async (req, res) => {
             },
         }));
 
-        // 3️⃣ Save to Redis with expiry (optional: 1 hour)
-        await client.set(cacheKey, JSON.stringify(result), 'EX', 60 * 60);
+        // 3️⃣ Save to Redis
+        await client.set(cacheKey, JSON.stringify(result));
 
         // Send the response
         return res.status(200).json({ categoryList: result });

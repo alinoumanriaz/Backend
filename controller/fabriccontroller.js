@@ -1,6 +1,7 @@
 import db from "../database/database.js";
 import { v2 as cloudinary } from 'cloudinary';
 import env from "dotenv";
+import { getRedisClient } from "../client.js";
 env.config()
 // Configuration
 cloudinary.config({
@@ -19,7 +20,7 @@ const addFabric = async (req, res) => {
         }
 
         const imageFile = req.file?.path
-        console.log({imageFile:imageFile})
+        console.log({ imageFile: imageFile })
         if (!imageFile) {
             return res.status(500).json({ message: 'Image is required.' });
         }
@@ -45,6 +46,13 @@ const addFabric = async (req, res) => {
 const fabricList = async (req, res) => {
 
     try {
+        const cacheKey = `fabricList`
+        const client = await getRedisClient()
+        const cacheData = await client(cacheKey)
+        if (cacheData) {
+            console.log('✅ Returning fabric list from Redis');
+            return res.status(200).json({ fabricList: JSON.parse(cacheData) })
+        }
         // Fetch all categories with their image and icon details
         const [fabric] = await db.query(`
             SELECT 
@@ -74,8 +82,9 @@ const fabricList = async (req, res) => {
             },
         }));
 
+        await client.set(cacheKey, JSON.stringify(result))
         // Send the response
-        return res.status(200).json({ fabricList: result });
+        return res.status(200).json({ cacheKey: result });
     } catch (error) {
         console.error('Error fetching fabrics:', error);
         return res.status(500).json({ message: 'Failed to fetch fabrics' });
@@ -97,16 +106,16 @@ const fabricDelete = async (req, res) => {
 
 const editFabric = async (req, res) => {
     const { id, name, slug, description } = req.body
-    try {        
-            await db.query(`UPDATE fabric SET name=?, slug=?, description=? WHERE id=?`, [name, slug, description, id])
-            const imageFile = req.file?.path
-            if (imageFile) {
-                const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'fabric-images' });
-                await db.query(`UPDATE fabric_images SET imageUrl=?, imageAlt=? WHERE fabricId=? `, [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, id])
-                return res.status(200).json({ message: 'fabric edit successfully' })
-            }
+    try {
+        await db.query(`UPDATE fabric SET name=?, slug=?, description=? WHERE id=?`, [name, slug, description, id])
+        const imageFile = req.file?.path
+        if (imageFile) {
+            const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'fabric-images' });
+            await db.query(`UPDATE fabric_images SET imageUrl=?, imageAlt=? WHERE fabricId=? `, [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, id])
             return res.status(200).json({ message: 'fabric edit successfully' })
-        
+        }
+        return res.status(200).json({ message: 'fabric edit successfully' })
+
 
     } catch (error) {
         console.error('Error in edit fabric', error)
@@ -114,7 +123,7 @@ const editFabric = async (req, res) => {
     }
 }
 
-export const controller={
+export const controller = {
     addFabric,
     fabricList,
     fabricDelete,
