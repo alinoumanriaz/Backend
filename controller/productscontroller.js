@@ -127,7 +127,7 @@ const getAllProducts = async (req, res) => {
         const cacheData = await client.get(cacheKey)
         if (cacheData) {
             console.log('✅ Returning product list from Redis');
-            return res.status(200).json({ allProducts: JSON.parse(cacheKey) })
+            res.status(200).json({ message: 'all products list', allProducts: cacheData });
         }
         // 1. Get all products
         const [products] = await db.query('SELECT p.*, f.name AS fabricName, f.slug AS fabricSlug FROM products p JOIN fabric f ON p.fabricId= f.id');
