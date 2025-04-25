@@ -44,16 +44,18 @@ const addFabric = async (req, res) => {
 }
 
 const fabricList = async (req, res) => {
-
     try {
-        const cacheKey = 'fabricList'
-        const client = await getRedisClient()
-        const cacheData = await client.get(cacheKey)
-        if (cacheData) {
+        const cacheKey = 'fabricList';
+        const client = await getRedisClient();
+
+        // 1️⃣ Check Redis cache first
+        const cachedData = await client.get(cacheKey);
+        if (cachedData) {
             console.log('✅ Returning fabric list from Redis');
-            return res.status(200).json({ fabricList: JSON.parse(cacheData) })
+            return res.status(200).json({ fabricList: JSON.parse(cachedData) });
         }
-        // Fetch all categories with their image and icon details
+
+        // 2️⃣ Fetch fabric data with images
         const [fabric] = await db.query(`
             SELECT 
                 f.id AS fabricId,
@@ -69,7 +71,7 @@ const fabricList = async (req, res) => {
                 fabric_images fi ON fi.fabricId = f.id
         `);
 
-        // Format the response
+        // 3️⃣ Format the response
         const result = fabric.map(fabric => ({
             id: fabric.fabricId,
             name: fabric.fabricName,
@@ -82,15 +84,24 @@ const fabricList = async (req, res) => {
             },
         }));
 
-        await client.set(cacheKey, JSON.stringify(result));
-        // Send the response
+        // 4️⃣ Save the fabric list to Redis with an expiration of 1 hour (3600 seconds)
+        await client.set(cacheKey, JSON.stringify(result), 'EX', 3600);
+
+        // 5️⃣ Send the response with fabric list data
         return res.status(200).json({ fabricList: result });
+
     } catch (error) {
         console.error('Error fetching fabrics:', error);
+        
+        // Redis error handling
+        if (error.message.includes('redis')) {
+            return res.status(500).json({ message: 'Failed to connect to Redis, fallback to DB' });
+        }
+
         return res.status(500).json({ message: 'Failed to fetch fabrics' });
     }
+};
 
-}
 
 const fabricDelete = async (req, res) => {
     try {

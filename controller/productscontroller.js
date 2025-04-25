@@ -122,40 +122,48 @@ const addProduct = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
     try {
-        const cacheKey = 'allProducts'
-        const client = await getRedisClient()
-        const cacheData = await client.get(cacheKey)
-        if (cacheData) {
+        const cacheKey = 'allProducts';
+        const client = await getRedisClient();
+
+        // 1️⃣ Check Redis cache first
+        const cachedData = await client.get(cacheKey);
+        if (cachedData) {
             console.log('✅ Returning product list from Redis');
-            res.status(200).json({ message: 'all products list', allProducts: cacheData });
+            return res.status(200).json({ message: 'all products list', allProducts: JSON.parse(cachedData) });
         }
-        // 1. Get all products
-        const [products] = await db.query('SELECT p.*, f.name AS fabricName, f.slug AS fabricSlug FROM products p JOIN fabric f ON p.fabricId= f.id');
+
+        // 2️⃣ Fetch all products with fabric info
+        const [products] = await db.query(`
+            SELECT p.*, f.name AS fabricName, f.slug AS fabricSlug
+            FROM products p
+            JOIN fabric f ON p.fabricId = f.id
+        `);
 
         const productList = [];
 
+        // 3️⃣ Loop through products and get additional details
         for (const product of products) {
             const productId = product.id;
 
-            // 2. Get categories
+            // Get categories for each product
             const [categoryRows] = await db.query(`
-            SELECT c.id, c.name, c.slug
-            FROM products_categories pc
-            JOIN categories c ON pc.categoryId = c.id
-            WHERE pc.productId = ?
-          `, [productId]);
+                SELECT c.id, c.name, c.slug
+                FROM products_categories pc
+                JOIN categories c ON pc.categoryId = c.id
+                WHERE pc.productId = ?
+            `, [productId]);
 
-            // 3. Get variations
+            // Get variations for each product
             const [variants] = await db.query(`
-            SELECT * FROM product_variants WHERE productId = ?
-          `, [productId]);
+                SELECT * FROM product_variants WHERE productId = ?
+            `, [productId]);
 
-            // 4. Get images (main + gallery)
+            // Get images (main + gallery) for each product
             const [images] = await db.query(`
-            SELECT * FROM product_images WHERE productId = ?
-          `, [productId]);
+                SELECT * FROM product_images WHERE productId = ?
+            `, [productId]);
 
-            // 5. Attach images to the relevant variant
+            // Attach images to the relevant variant
             const enrichedVariants = variants.map(variant => {
                 const variantImages = images.filter(img => img.variantId === variant.variantId);
                 return {
@@ -165,6 +173,7 @@ const getAllProducts = async (req, res) => {
                 };
             });
 
+            // Add enriched product data to productList
             productList.push({
                 ...product,
                 categories: categoryRows,
@@ -172,14 +181,23 @@ const getAllProducts = async (req, res) => {
             });
         }
 
-        await client.set(cacheKey, JSON.stringify(productList));
-        
-        res.status(200).json({ message: 'all products list', allProducts: productList });
+        // 4️⃣ Save the product list to Redis with an expiration of 1 hour (3600 seconds)
+        await client.set(cacheKey, JSON.stringify(productList), 'EX', 3600);
+
+        // 5️⃣ Send the response with all product data
+        return res.status(200).json({ message: 'all products list', allProducts: productList });
+
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: 'Error fetching products' });
+        console.error('Error fetching products:', error);
+        // Redis error handling
+        if (error.message.includes('redis')) {
+            return res.status(500).json({ message: 'Failed to connect to Redis, fallback to DB' });
+        }
+
+        return res.status(500).json({ message: 'Error fetching products' });
     }
-}
+};
+
 
 const singleProduct = async (req, res) => {
     const slug = req.params.slug

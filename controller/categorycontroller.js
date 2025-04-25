@@ -97,7 +97,7 @@ const categoryList = async (req, res) => {
         }));
 
         // 3️⃣ Save to Redis
-        await client.set(cacheKey, JSON.stringify(result));
+        await client.set(cacheKey, JSON.stringify(result), 'EX', 3600);
 
         // Send the response
         return res.status(200).json({ categoryList: result });
