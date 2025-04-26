@@ -124,8 +124,8 @@ const addProduct = async (req, res) => {
           // 3. Now you can use categorySlugs for revalidate
           const pathsToRevalidate = [
             '/shop',
-            `/shop/${productSlug}`,
-            `/shop/fabric/${fabricSlug}`,
+            `/shop/${slug}`,
+            `/shop/fabric/${fabric}`,
             ...categorySlugs.map(slug => `/shop/${slug}`)
           ];
           
