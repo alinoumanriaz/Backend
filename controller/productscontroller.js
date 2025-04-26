@@ -303,7 +303,8 @@ const singleProduct = async (req, res) => {
 
 
 const deleteProduct = async (req, res) => {
-    const id = req.params.id;
+    console.log(req.body)
+    const {id,  fabric, categories, slug}= req.body
     let connection;
 
     try {
@@ -343,6 +344,21 @@ const deleteProduct = async (req, res) => {
 
         // Commit transaction if all operations succeeded
         await connection.commit();
+        
+        const categorySlug = categories?.map((item)=> item.slug)
+        const pathsToRevalidate = [
+            '/shop',
+            `/women`,
+            `/men`,
+            `/eidsale`,
+            `/newarrival`,
+            `/shop/${slug}`,
+            `/shop/fabric/${fabric}`,
+            ...categorySlug.map(slug => `/shop/${slug}`)
+        ];
+
+        // 4. Revalidate all paths
+        await revalidateFrontend(pathsToRevalidate);
 
         res.status(200).json({ message: 'Product and all associated images deleted successfully' });
     } catch (error) {
