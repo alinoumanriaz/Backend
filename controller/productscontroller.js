@@ -122,15 +122,15 @@ const addProduct = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
     try {
-        const cacheKey = 'allProducts';
-        const client = await getRedisClient();
+        // const cacheKey = 'allProducts';
+        // const client = await getRedisClient();
 
-        // 1️⃣ Check Redis cache first
-        const cachedData = await client.get(cacheKey);
-        if (cachedData) {
-            console.log('✅ Returning product list from Redis');
-            return res.status(200).json({ message: 'all products list', allProducts: JSON.parse(cachedData) });
-        }
+        // // 1️⃣ Check Redis cache first
+        // const cachedData = await client.get(cacheKey);
+        // if (cachedData) {
+        //     console.log('✅ Returning product list from Redis');
+        //     return res.status(200).json({ message: 'all products list', allProducts: JSON.parse(cachedData) });
+        // }
 
         // 2️⃣ Fetch all products with fabric info
         const [products] = await db.query(`
@@ -182,7 +182,7 @@ const getAllProducts = async (req, res) => {
         }
 
         // 4️⃣ Save the product list to Redis with an expiration of 1 hour (3600 seconds)
-        await client.set(cacheKey, JSON.stringify(productList), 'EX', 3600);
+        // await client.set(cacheKey, JSON.stringify(productList), 'EX', 3600);
 
         // 5️⃣ Send the response with all product data
         return res.status(200).json({ message: 'all products list', allProducts: productList });

@@ -53,14 +53,14 @@ const categoryList = async (req, res) => {
 
     try {
 
-        const cacheKey = 'categoryList';
-        const client = await getRedisClient()
-        // 1️⃣ Check Redis cache first
-        const cachedData = await client.get(cacheKey);
-        if (cachedData) {
-            console.log('✅ Returning category list from Redis');
-            return res.status(200).json({ categoryList: JSON.parse(cachedData) });
-        }
+        // const cacheKey = 'categoryList';
+        // const client = await getRedisClient()
+        // // 1️⃣ Check Redis cache first
+        // const cachedData = await client.get(cacheKey);
+        // if (cachedData) {
+        //     console.log('✅ Returning category list from Redis');
+        //     return res.status(200).json({ categoryList: JSON.parse(cachedData) });
+        // }
 
 
         // Fetch all categories with their image and icon details
@@ -97,7 +97,7 @@ const categoryList = async (req, res) => {
         }));
 
         // 3️⃣ Save to Redis
-        await client.set(cacheKey, JSON.stringify(result), 'EX', 3600);
+        // await client.set(cacheKey, JSON.stringify(result), 'EX', 3600);
 
         // Send the response
         return res.status(200).json({ categoryList: result });

@@ -45,15 +45,15 @@ const addFabric = async (req, res) => {
 
 const fabricList = async (req, res) => {
     try {
-        const cacheKey = 'fabricList';
-        const client = await getRedisClient();
+        // const cacheKey = 'fabricList';
+        // const client = await getRedisClient();
 
-        // 1️⃣ Check Redis cache first
-        const cachedData = await client.get(cacheKey);
-        if (cachedData) {
-            console.log('✅ Returning fabric list from Redis');
-            return res.status(200).json({ fabricList: JSON.parse(cachedData) });
-        }
+        // // 1️⃣ Check Redis cache first
+        // const cachedData = await client.get(cacheKey);
+        // if (cachedData) {
+        //     console.log('✅ Returning fabric list from Redis');
+        //     return res.status(200).json({ fabricList: JSON.parse(cachedData) });
+        // }
 
         // 2️⃣ Fetch fabric data with images
         const [fabric] = await db.query(`
@@ -85,7 +85,7 @@ const fabricList = async (req, res) => {
         }));
 
         // 4️⃣ Save the fabric list to Redis with an expiration of 1 hour (3600 seconds)
-        await client.set(cacheKey, JSON.stringify(result), 'EX', 3600);
+        // await client.set(cacheKey, JSON.stringify(result), 'EX', 3600);
 
         // 5️⃣ Send the response with fabric list data
         return res.status(200).json({ fabricList: result });
@@ -94,9 +94,9 @@ const fabricList = async (req, res) => {
         console.error('Error fetching fabrics:', error);
         
         // Redis error handling
-        if (error.message.includes('redis')) {
-            return res.status(500).json({ message: 'Failed to connect to Redis, fallback to DB' });
-        }
+        // if (error.message.includes('redis')) {
+        //     return res.status(500).json({ message: 'Failed to connect to Redis, fallback to DB' });
+        // }
 
         return res.status(500).json({ message: 'Failed to fetch fabrics' });
     }
