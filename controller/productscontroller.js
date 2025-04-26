@@ -111,6 +111,12 @@ const addProduct = async (req, res) => {
 
         await Promise.all(variantPromises);
 
+        
+        await Promise.all(
+            revalidateFrontend('/shop'),
+            revalidateFrontend(`/shop/${slug}`),
+        )
+
         await connection.commit();
         return res.status(200).json({ message: 'Product added successfully' });
     } catch (error) {
@@ -182,10 +188,6 @@ const getAllProducts = async (req, res) => {
                 variations: enrichedVariants
             });
         }
-        await Promise.all(
-            revalidateFrontend('/shop'),
-            revalidateFrontend(`/shop/${products.slug}`),
-        )
 
         // 4️⃣ Save the product list to Redis with an expiration of 1 hour (3600 seconds)
         // await client.set(cacheKey, JSON.stringify(productList), 'EX', 3600);
