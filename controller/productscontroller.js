@@ -129,7 +129,7 @@ const addProduct = async (req, res) => {
             `/women`,
             `/men`,
             `/eidsale`,
-            `/newarrival`
+            `/newarrival`,
             `/shop/${slug}`,
             `/shop/fabric/${fabricRows[0].slug}`,
             ...categorySlugs.map(slug => `/shop/${slug}`)
