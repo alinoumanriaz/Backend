@@ -111,11 +111,26 @@ const addProduct = async (req, res) => {
 
         await Promise.all(variantPromises);
 
-        
-        await Promise.all([
-            revalidateFrontend('/shop'),
-            revalidateFrontend(`/shop/${slug}`),
-        ])
+
+        const [categoryRows] = await connection.query(
+            `SELECT slug FROM categories WHERE id IN (${categories.map(() => '?').join(',')})`,
+            categories
+          );
+          
+          // categoryRows now looks like: [ { slug: 'men' }, { slug: 'shoes' }, ... ]
+          
+          const categorySlugs = categoryRows.map(row => row.slug);
+          
+          // 3. Now you can use categorySlugs for revalidate
+          const pathsToRevalidate = [
+            '/shop',
+            `/shop/${productSlug}`,
+            `/shop/fabric/${fabricSlug}`,
+            ...categorySlugs.map(slug => `/shop/${slug}`)
+          ];
+          
+          // 4. Revalidate all paths
+          await Promise.all(pathsToRevalidate.map(path => revalidateFrontend(path)));
 
         await connection.commit();
         return res.status(200).json({ message: 'Product added successfully' });
