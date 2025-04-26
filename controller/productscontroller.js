@@ -184,7 +184,7 @@ const getAllProducts = async (req, res) => {
         }
         await Promise.all(
             revalidateFrontend('/shop'),
-            revalidateFrontend(`/shop/${slug}`),
+            revalidateFrontend(`/shop/${products.slug}`),
         )
 
         // 4️⃣ Save the product list to Redis with an expiration of 1 hour (3600 seconds)

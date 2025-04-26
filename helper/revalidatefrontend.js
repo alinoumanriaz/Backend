@@ -2,6 +2,7 @@
 import axios from 'axios';
 
 export async function revalidateFrontend(path) {
+    console.log({revalidatePath:path})
   try {
     const response = await axios.post('https://www.mirfah.com/api/revalidate', {
       path,
