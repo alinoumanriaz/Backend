@@ -1,7 +1,7 @@
 import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
 import env from "dotenv";
-import { getRedisClient } from "../client.js";
+// import { getRedisClient } from "../client.js";
 env.config()
 
 // Configuration
