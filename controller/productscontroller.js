@@ -112,10 +112,10 @@ const addProduct = async (req, res) => {
         await Promise.all(variantPromises);
 
         
-        await Promise.all(
+        await Promise.all([
             revalidateFrontend('/shop'),
             revalidateFrontend(`/shop/${slug}`),
-        )
+        ])
 
         await connection.commit();
         return res.status(200).json({ message: 'Product added successfully' });
