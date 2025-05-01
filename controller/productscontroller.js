@@ -231,7 +231,6 @@ const getAllProducts = async (req, res) => {
 
 const singleProduct = async (req, res) => {
     const slug = req.params.slug
-    console.log(slug)
     try {
         const [productResult] = await db.query(`SELECT 
             p.id AS id,
@@ -250,7 +249,6 @@ const singleProduct = async (req, res) => {
         } else {
             const productId = productResult[0].id
             const productData = productResult[0]
-            console.log(productId)
             const [variations] = await db.query(`SELECT
                 pv.variantId AS variantId,
                 pv.colorName AS colorName,
@@ -303,7 +301,6 @@ const singleProduct = async (req, res) => {
 
 
 const deleteProduct = async (req, res) => {
-    console.log(req.body)
     const {id,  fabric, categories, slug}= req.body
     let connection;
 

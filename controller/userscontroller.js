@@ -29,7 +29,6 @@ const registorUser = async (req, res) => {
 
     try {
         const [result] = await db.query('INSERT INTO users (username,email,password) values (?,?,?)', [username, email, hashpassword])
-        console.log({ result: result.insertId })
 
         try {
             const userId = result.insertId
@@ -45,7 +44,6 @@ const registorUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
     const { email, password } = await req.body;
-    console.log(email)
 
     if (email || password) {
         const [userResult] = await db.query('SELECT * FROM users WHERE email=?', [email])

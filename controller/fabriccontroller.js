@@ -20,7 +20,7 @@ const addFabric = async (req, res) => {
         }
 
         const imageFile = req.file?.path
-        console.log({ imageFile: imageFile })
+        // console.log({ imageFile: imageFile })
         if (!imageFile) {
             return res.status(500).json({ message: 'Image is required.' });
         }
