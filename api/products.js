@@ -19,5 +19,6 @@ productRoutes.post('/addproduct', upload.any(), controller.addProduct)
 productRoutes.get('/allproducts', controller.getAllProducts)
 productRoutes.get('/:slug', controller.singleProduct)
 productRoutes.delete('/delete', controller.deleteProduct)
+productRoutes.post('/editproduct', controller.editProduct)
 
 export default productRoutes

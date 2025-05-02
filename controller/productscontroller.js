@@ -3,7 +3,7 @@ import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
 import env from "dotenv";
 import { revalidateFrontend } from "../helper/revalidatefrontend.js";
-// import { getRedisClient } from "../client.js";
+import { getRedisClient } from "../client.js";
 
 env.config()
 
@@ -14,6 +14,7 @@ cloudinary.config({
 });
 
 const addProduct = async (req, res) => {
+
     const { name, slug, description, gender, category, status, fabric, variation, originalProductLink, clothType } = req.body
 
     // Validation (keep this part the same)
@@ -119,6 +120,8 @@ const addProduct = async (req, res) => {
             categories
         );
 
+        const client = await getRedisClient();
+        await client.del('allProducts')
         // categoryRows now looks like: [ { slug: 'men' }, { slug: 'shoes' }, ... ]
 
         const categorySlugs = categoryRows.map(row => row.slug);
@@ -152,15 +155,15 @@ const addProduct = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
     try {
-        // const cacheKey = 'allProducts';
-        // const client = await getRedisClient();
+        const cacheKey = 'allProducts';
+        const client = await getRedisClient();
 
-        // // 1️⃣ Check Redis cache first
-        // const cachedData = await client.get(cacheKey);
-        // if (cachedData) {
-        //     console.log('✅ Returning product list from Redis');
-        //     return res.status(200).json({ message: 'all products list', allProducts: JSON.parse(cachedData) });
-        // }
+        // 1️⃣ Check Redis cache first
+        const cachedData = await client.get(cacheKey);
+        if (cachedData) {
+            console.log('✅ Returning product list from Redis');
+            return res.status(200).json({ message: 'all products list', allProducts: JSON.parse(cachedData) });
+        }
 
         // 2️⃣ Fetch all products with fabric info
         const [products] = await db.query(`
@@ -212,7 +215,7 @@ const getAllProducts = async (req, res) => {
         }
 
         // 4️⃣ Save the product list to Redis with an expiration of 1 hour (3600 seconds)
-        // await client.set(cacheKey, JSON.stringify(productList), 'EX', 3600);
+        await client.set(cacheKey, JSON.stringify(productList));
 
         // 5️⃣ Send the response with all product data
         return res.status(200).json({ message: 'all products list', allProducts: productList });
@@ -301,7 +304,7 @@ const singleProduct = async (req, res) => {
 
 
 const deleteProduct = async (req, res) => {
-    const {id,  fabric, categories, slug}= req.body
+    const { id, fabric, categories, slug } = req.body
     let connection;
 
     try {
@@ -341,8 +344,8 @@ const deleteProduct = async (req, res) => {
 
         // Commit transaction if all operations succeeded
         await connection.commit();
-        
-        const categorySlug = categories?.map((item)=> item.slug)
+
+        const categorySlug = categories?.map((item) => item.slug)
         const pathsToRevalidate = [
             '/shop',
             `/women`,
@@ -374,10 +377,15 @@ const deleteProduct = async (req, res) => {
     }
 };
 
+const editProduct = async (req, res) => {
+
+}
+
 
 export const controller = {
     addProduct,
     getAllProducts,
     singleProduct,
-    deleteProduct
+    deleteProduct,
+    editProduct
 }

@@ -34,6 +34,9 @@ const addFabric = async (req, res) => {
 
         await db.query('INSERT INTO fabric_images ( imageUrl, imageAlt, fabricId ) value (?,?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, fabricId])
 
+        const client = await getRedisClient()
+        await client.del('fabricList')
+
         return res.status(200).json({ message: 'fabric added successfully' });
 
     } catch (error) {
@@ -45,15 +48,15 @@ const addFabric = async (req, res) => {
 
 const fabricList = async (req, res) => {
     try {
-        // const cacheKey = 'fabricList';
-        // const client = await getRedisClient();
+        const cacheKey = 'fabricList';
+        const client = await getRedisClient();
 
-        // // 1️⃣ Check Redis cache first
-        // const cachedData = await client.get(cacheKey);
-        // if (cachedData) {
-        //     console.log('✅ Returning fabric list from Redis');
-        //     return res.status(200).json({ fabricList: JSON.parse(cachedData) });
-        // }
+        // 1️⃣ Check Redis cache first
+        const cachedData = await client.get(cacheKey);
+        if (cachedData) {
+            console.log('✅ Returning fabric list from Redis');
+            return res.status(200).json({ fabricList: JSON.parse(cachedData) });
+        }
 
         // 2️⃣ Fetch fabric data with images
         const [fabric] = await db.query(`
@@ -85,7 +88,7 @@ const fabricList = async (req, res) => {
         }));
 
         // 4️⃣ Save the fabric list to Redis with an expiration of 1 hour (3600 seconds)
-        // await client.set(cacheKey, JSON.stringify(result), 'EX', 3600);
+        await client.set(cacheKey, JSON.stringify(result));
 
         // 5️⃣ Send the response with fabric list data
         return res.status(200).json({ fabricList: result });

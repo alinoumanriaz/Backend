@@ -1,6 +1,7 @@
 import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
 import env from "dotenv";
+import { getRedisClient } from "../client.js";
 // import { getRedisClient } from "../client.js";
 env.config()
 
@@ -40,6 +41,10 @@ const addCategory = async (req, res) => {
 
         await db.query('INSERT INTO category_images ( imageUrl, imageAlt, categoryId ) value (?,?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, categoryId])
 
+        const client = await getRedisClient()
+        await client.del('categoryList')
+
+
         return res.status(200).json({ message: 'Category added successfully' });
 
     } catch (error) {
@@ -53,14 +58,14 @@ const categoryList = async (req, res) => {
 
     try {
 
-        // const cacheKey = 'categoryList';
-        // const client = await getRedisClient()
-        // // 1️⃣ Check Redis cache first
-        // const cachedData = await client.get(cacheKey);
-        // if (cachedData) {
-        //     console.log('✅ Returning category list from Redis');
-        //     return res.status(200).json({ categoryList: JSON.parse(cachedData) });
-        // }
+        const cacheKey = 'categoryList';
+        const client = await getRedisClient()
+        // 1️⃣ Check Redis cache first
+        const cachedData = await client.get(cacheKey);
+        if (cachedData) {
+            console.log('✅ Returning category list from Redis');
+            return res.status(200).json({ categoryList: JSON.parse(cachedData) });
+        }
 
 
         // Fetch all categories with their image and icon details
@@ -97,7 +102,7 @@ const categoryList = async (req, res) => {
         }));
 
         // 3️⃣ Save to Redis
-        // await client.set(cacheKey, JSON.stringify(result), 'EX', 3600);
+        await client.set(cacheKey, JSON.stringify(result));
 
         // Send the response
         return res.status(200).json({ categoryList: result });
@@ -112,6 +117,8 @@ const categoryDelete = async (req, res) => {
     try {
         const categoryId = req.params.id
         await db.query('DELETE FROM categories WHERE id = ?', [categoryId])
+        const client = await getRedisClient()
+        await client.del('categoryList')
         return res.status(200).json({ message: 'category deleted successfully' })
     } catch (error) {
         console.error('Error in delete category', error)
@@ -129,6 +136,10 @@ const editCategory = async (req, res) => {
             if (imageFile) {
                 const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });
                 await db.query(`UPDATE category_images SET imageUrl=?, imageAlt=? WHERE categoryId=? `, [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, id])
+
+                const client = await getRedisClient()
+                await client.del('categoryList')
+
                 return res.status(200).json({ message: 'category edit successfully' })
             }
             return res.status(200).json({ message: 'category edit successfully' })
@@ -138,6 +149,10 @@ const editCategory = async (req, res) => {
             if (imageFile) {
                 const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });
                 await db.query(`UPDATE category_images SET imageUrl=?, imageAlt=? WHERE categoryId=? `, [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, id])
+
+                const client = await getRedisClient()
+                await client.del('categoryList')
+
                 return res.status(200).json({ message: 'category edit successfully' })
             }
             return res.status(200).json({ message: 'category edit successfully' })
