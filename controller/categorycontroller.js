@@ -1,8 +1,7 @@
 import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
-import env from "dotenv";
 import { getRedisClient } from "../client.js";
-// import { getRedisClient } from "../client.js";
+import env from "dotenv";
 env.config()
 
 // Configuration
@@ -13,7 +12,7 @@ cloudinary.config({
 });
 
 const addCategory = async (req, res) => {
-    const { name, slug, description, parentCategory } = req.body
+    const { name, slug, description, parentCategory, imageUrl } = req.body
 
     try {
         const checkSlug = await db.query(`SELECT COUNT(*) as count FROM categories WHERE slug = ? `, [slug])
@@ -21,13 +20,8 @@ const addCategory = async (req, res) => {
             return res.status(500).json({ message: 'Duplicate slug' })
         }
 
-        const imageFile = req.file?.path
-        if (!imageFile) {
+        if (!imageUrl) {
             return res.status(500).json({ message: 'Image is required.' });
-        }
-        const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });
-        if (!cloudinaryImageResult) {
-            return res.status(500).json({ message: 'Image upload to cloudinary failed' });
         }
 
         let categoryId
@@ -39,7 +33,7 @@ const addCategory = async (req, res) => {
             categoryId = uploadCategoryResult.insertId
         }
 
-        await db.query('INSERT INTO category_images ( imageUrl, imageAlt, categoryId ) value (?,?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, categoryId])
+        await db.query('INSERT INTO category_images ( imageUrl, categoryId ) value (?,?)', [imageUrl, categoryId])
 
         const client = await getRedisClient()
         await client.del('categoryList')
@@ -77,8 +71,7 @@ const categoryList = async (req, res) => {
                 c.description AS categoryDescription,
                 c.updatedAt AS updatedAt,
                 parentc.name AS parentCategory,
-                ci.imageUrl AS imageUrl,
-                ci.imageAlt AS imageAlt
+                ci.imageUrl AS imageUrl
             FROM 
                 categories c
             LEFT JOIN
@@ -96,8 +89,7 @@ const categoryList = async (req, res) => {
             parentCategory: category.parentCategory,
             updatedAt: category.updatedAt,
             image: {
-                url: category.imageUrl,
-                alt: category.imageAlt,
+                url: category.imageUrl
             },
         }));
 
@@ -127,34 +119,35 @@ const categoryDelete = async (req, res) => {
 }
 
 const editCategory = async (req, res) => {
-    const { id, name, slug, description, parentCategory } = req.body
+    const { id, name, slug, description, parentCategory, imageUrl } = req.body
     try {
 
         if (parentCategory) {
             await db.query(`UPDATE categories SET name=?, slug=?, description=?, parentCategoryId=? WHERE id=?`, [name, slug, description, parentCategory, id])
-            const imageFile = req.file?.path
-            if (imageFile) {
-                const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });
-                await db.query(`UPDATE category_images SET imageUrl=?, imageAlt=? WHERE categoryId=? `, [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, id])
+            if (imageUrl) {
+                await db.query(`UPDATE category_images SET imageUrl=? WHERE categoryId=? `, [imageUrl, id])
 
                 const client = await getRedisClient()
                 await client.del('categoryList')
 
                 return res.status(200).json({ message: 'category edit successfully' })
             }
+            const client = await getRedisClient()
+            await client.del('categoryList')
             return res.status(200).json({ message: 'category edit successfully' })
         } else {
             await db.query(`UPDATE categories SET name=?, slug=?, parentCategoryId=NULL, description=? WHERE id=?`, [name, slug, description, id])
-            const imageFile = req.file?.path
-            if (imageFile) {
-                const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'category-images' });
-                await db.query(`UPDATE category_images SET imageUrl=?, imageAlt=? WHERE categoryId=? `, [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, id])
+            if (imageUrl) {
+
+                await db.query(`UPDATE category_images SET imageUrl=? WHERE categoryId=? `, [imageUrl, id])
 
                 const client = await getRedisClient()
                 await client.del('categoryList')
 
                 return res.status(200).json({ message: 'category edit successfully' })
             }
+            const client = await getRedisClient()
+            await client.del('categoryList')
             return res.status(200).json({ message: 'category edit successfully' })
         }
 

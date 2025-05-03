@@ -7,15 +7,10 @@ import { getRedisClient } from "../client.js";
 
 env.config()
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_API_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
 const addProduct = async (req, res) => {
 
     const { name, slug, description, gender, category, status, fabric, variation, originalProductLink, clothType } = req.body
+    console.log({variation:variation})
 
     // Validation (keep this part the same)
     if (name === '' || slug === '' || gender === '' || fabric === '' || originalProductLink === '' || clothType === '') {
@@ -74,40 +69,44 @@ const addProduct = async (req, res) => {
                 ]
             );
             const variantId = variantResult.insertId;
+            console.log({varientID:variantId})
 
             // Process images for this variant
-            const mainImage = req.files.find(f => f.fieldname === `image[${index}]`);
-            const galleryImages = req.files.filter(f => f.fieldname === `gallery[${index}]`);
+            const mainImage = Array.isArray(variant.image) ? variant.image[0] : variant.image; // Ensure single image handling
+            const galleryImages = variant.gallery || [];
+            console.log({mainImage:variant.image})
+            console.log({galleryImages:variant.gallery})
 
-            // Upload all images in parallel
-            const imageUploads = [];
+            const imagePromises = [];
 
+            // If mainImage is provided, insert it into the database
             if (mainImage) {
-                imageUploads.push(
-                    cloudinary.uploader.upload(mainImage.path, { folder: 'product_images' })
-                        .then(uploadedMainImage =>
-                            connection.query(
-                                `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) 
-                                VALUES (?, ?, ?, ?, ?)`,
-                                [productId, variantId, uploadedMainImage.secure_url, uploadedMainImage.original_filename, 1]
-                            )
-                        )
+                imagePromises.push(
+                    connection.query(
+                        `INSERT INTO product_images (productId, variantId, imageUrl, isMain) 
+                        VALUES (?, ?, ?, ?)`,
+                        [productId, variantId, mainImage, 1]
+                    )
                 );
             }
 
-            // Process gallery images
-            imageUploads.push(...galleryImages.map(img =>
-                cloudinary.uploader.upload(img.path, { folder: 'product_images' })
-                    .then(uploadedImage =>
+            // Insert gallery images into the database
+            if (galleryImages.length > 0) {
+                galleryImages.forEach(img => {
+                    imagePromises.push(
                         connection.query(
-                            `INSERT INTO product_images (productId, variantId, imageUrl, altText, isMain) 
-                            VALUES (?, ?, ?, ?, ?)`,
-                            [productId, variantId, uploadedImage.secure_url, uploadedImage.original_filename, 0]
+                            `INSERT INTO product_images (productId, variantId, imageUrl, isMain) 
+                            VALUES (?, ?, ?, ?)`,
+                            [productId, variantId, img, 0]
                         )
-                    )
-            ));
+                    );
+                });
+            }
 
-            await Promise.all(imageUploads);
+
+            // Wait for all image uploads
+            await Promise.all(imagePromises);
+
         });
 
         await Promise.all(variantPromises);
@@ -234,6 +233,7 @@ const getAllProducts = async (req, res) => {
 
 const singleProduct = async (req, res) => {
     const slug = req.params.slug
+    console.log({productapislug:slug})
     try {
         const [productResult] = await db.query(`SELECT 
             p.id AS id,
@@ -271,7 +271,7 @@ const singleProduct = async (req, res) => {
                   `, [productId]);
 
             const [images] = await db.query(`
-                    SELECT variantId, imageUrl, altText, isMain
+                    SELECT variantId, imageUrl, isMain
                     FROM product_images
                     WHERE variantId IN (?)
                   `, [variations.map(v => v.variantId)])
@@ -325,7 +325,7 @@ const deleteProduct = async (req, res) => {
             // https://res.cloudinary.com/<cloud_name>/<resource_type>/<type>/<public_id>.<format>
             const urlParts = image.imageUrl.split('/');
             const publicIdWithExtension = urlParts.slice(-2).join('/').split('.')[0];
-            const publicId = `product_images/${publicIdWithExtension}`;
+            const publicId = `Gallery/${publicIdWithExtension}`;
 
             try {
                 return await cloudinary.uploader.destroy(publicId);
@@ -379,6 +379,73 @@ const deleteProduct = async (req, res) => {
 
 const editProduct = async (req, res) => {
 
+    const { id } = req.params
+    try {
+        const [productResult] = await db.query(`SELECT 
+            p.id AS id,
+            p.name AS name,
+            p.slug AS slug,
+            p.description AS description,
+            p.gender AS gender,
+            f.id AS fabric,
+            p.originalProductLink AS originalProductLink,
+            p.clothType AS clothType
+            FROM products p
+            JOIN fabric f ON p.fabricId= f.id
+            WHERE p.id=?`, [id])
+
+        if (!productResult) {
+            return res.status(500).json({ message: 'single product not found' })
+        } else {
+            const productId = productResult[0].id
+            const productData = productResult[0]
+            const [variations] = await db.query(`SELECT
+                pv.variantId AS variantId,
+                pv.colorName AS colorName,
+                pv.colorCode AS colorCode,
+                pv.sizes AS sizes,
+                pv.price,
+                pv.salePrice,
+                pv.stock
+                FROM product_variants pv
+                WHERE pv.productId=?`, [productId])
+
+            const [categoryRows] = await db.query(`
+                    SELECT c.id
+                    FROM products_categories pc
+                    JOIN categories c ON pc.categoryId = c.id
+                    WHERE pc.productId = ?
+                  `, [productId]);
+
+            const [images] = await db.query(`
+                    SELECT variantId, imageUrl, isMain
+                    FROM product_images
+                    WHERE variantId IN (?)
+                  `, [variations.map(v => v.variantId)])
+
+            const variation = variations.map(variant => {
+                const variantImages = images.filter(img => img.variantId === variant.variantId)
+                const mainImage = variantImages.find(img => img.isMain)
+                const gallery = variantImages.filter(img => !img.isMain)
+
+                return {
+                    ...variant,
+                    image: mainImage?.imageUrl,
+                    gallery: gallery.map(g => g.imageUrl)
+                }
+            })
+
+            const singleProductData = {
+                ...productData,
+                categories: categoryRows,
+                variation
+            }
+            return res.status(200).json({ singleProductData: singleProductData })
+        }
+    }
+    catch (error) {
+        console.log('edit api not working', error)
+    }
 }
 
 

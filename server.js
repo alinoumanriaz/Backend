@@ -9,6 +9,7 @@ import orderRouters from "./api/order.js";
 import reviewRoutes from "./api/review.js";
 import env from 'dotenv';
 import fabricRoutes from "./api/fabric.js";
+import cloudinaryRouter from "./api/cloudinary.js";
 env.config();
 
 const app = express();
@@ -65,6 +66,7 @@ app.use('/api/product', productRoutes);
 app.use('/api/review', reviewRoutes);
 app.use('/api/wishlist', wishlistRouter);
 app.use('/api/order', orderRouters);
+app.use('/api/cloudinary', cloudinaryRouter);
 
 // ✅ Health check route
 app.get('/', (req, res) => res.json({ message: 'Backend Working fine' }));

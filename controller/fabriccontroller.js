@@ -11,7 +11,8 @@ cloudinary.config({
 });
 
 const addFabric = async (req, res) => {
-    const { name, slug, description } = req.body
+    const { name, slug, description, imageUrl } = req.body
+    console.log({ reqbody: req.body })
 
     try {
         const checkSlug = await db.query(`SELECT COUNT(*) as count FROM fabric WHERE slug = ? `, [slug])
@@ -19,20 +20,14 @@ const addFabric = async (req, res) => {
             return res.status(500).json({ message: 'Duplicate slug' })
         }
 
-        const imageFile = req.file?.path
-        // console.log({ imageFile: imageFile })
-        if (!imageFile) {
+        if (!imageUrl) {
             return res.status(500).json({ message: 'Image is required.' });
-        }
-        const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'fabric-images' });
-        if (!cloudinaryImageResult) {
-            return res.status(500).json({ message: 'Image upload to cloudinary failed' });
         }
 
         const [uploadedfabricResult] = await db.query('INSERT INTO fabric ( name, slug, description) value (?,?,?)', [name, slug, description])
         const fabricId = uploadedfabricResult.insertId
 
-        await db.query('INSERT INTO fabric_images ( imageUrl, imageAlt, fabricId ) value (?,?,?)', [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, fabricId])
+        await db.query('INSERT INTO fabric_images ( imageUrl, fabricId ) value (?,?)', [imageUrl, fabricId])
 
         const client = await getRedisClient()
         await client.del('fabricList')
@@ -66,8 +61,7 @@ const fabricList = async (req, res) => {
                 f.slug AS fabricSlug,
                 f.description AS fabricDescription,
                 f.updatedAt AS updatedAt,
-                fi.imageUrl AS imageUrl,
-                fi.imageAlt AS imageAlt
+                fi.imageUrl AS imageUrl
             FROM 
                 fabric f
             LEFT JOIN
@@ -83,7 +77,6 @@ const fabricList = async (req, res) => {
             updatedAt: fabric.updatedAt,
             image: {
                 url: fabric.imageUrl,
-                alt: fabric.imageAlt,
             },
         }));
 
@@ -95,7 +88,7 @@ const fabricList = async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching fabrics:', error);
-        
+
         // Redis error handling
         // if (error.message.includes('redis')) {
         //     return res.status(500).json({ message: 'Failed to connect to Redis, fallback to DB' });
@@ -109,7 +102,12 @@ const fabricList = async (req, res) => {
 const fabricDelete = async (req, res) => {
     try {
         const fabricId = req.params.id
+        console.log({ fabricId: fabricId })
         await db.query('DELETE FROM fabric WHERE id = ?', [fabricId])
+
+        const client = await getRedisClient()
+        await client.del('fabricList')
+
         return res.status(200).json({ message: 'fabric deleted successfully' })
     } catch (error) {
         console.error('Error in delete category', error)
@@ -119,15 +117,18 @@ const fabricDelete = async (req, res) => {
 
 
 const editFabric = async (req, res) => {
-    const { id, name, slug, description } = req.body
+    const { id, name, slug, description, imageUrl } = req.body
     try {
         await db.query(`UPDATE fabric SET name=?, slug=?, description=? WHERE id=?`, [name, slug, description, id])
-        const imageFile = req.file?.path
-        if (imageFile) {
-            const cloudinaryImageResult = await cloudinary.uploader.upload(imageFile, { folder: 'fabric-images' });
-            await db.query(`UPDATE fabric_images SET imageUrl=?, imageAlt=? WHERE fabricId=? `, [cloudinaryImageResult.secure_url, cloudinaryImageResult.original_filename, id])
+
+        if (imageUrl) {
+            await db.query(`UPDATE fabric_images SET imageUrl=? WHERE fabricId=? `, [imageUrl, id])
+            const client = await getRedisClient()
+            await client.del('fabricList')
             return res.status(200).json({ message: 'fabric edit successfully' })
         }
+        const client = await getRedisClient()
+        await client.del('fabricList')
         return res.status(200).json({ message: 'fabric edit successfully' })
 
 
