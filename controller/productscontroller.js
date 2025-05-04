@@ -345,6 +345,9 @@ const deleteProduct = async (req, res) => {
         // Commit transaction if all operations succeeded
         await connection.commit();
 
+        const client = await getRedisClient();
+        await client.del('allProducts')
+
         const categorySlug = categories?.map((item) => item.slug)
         const pathsToRevalidate = [
             '/shop',
@@ -377,7 +380,7 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-const editProduct = async (req, res) => {
+const singleProductGetForEdit = async (req, res) => {
 
     const { id } = req.params
     try {
@@ -448,11 +451,19 @@ const editProduct = async (req, res) => {
     }
 }
 
+const editProduct = (req, res) =>{
+    const { id } = req.params
+    console.log({editproductID:id})
+    
+    return res.status(200).json( 'edit product backedn api work' ) 
+}
+
 
 export const controller = {
     addProduct,
     getAllProducts,
     singleProduct,
     deleteProduct,
+    singleProductGetForEdit,
     editProduct
 }
