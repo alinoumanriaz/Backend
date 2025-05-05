@@ -20,9 +20,9 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
     'http://192.168.0.110:3000',
-    'https://dashboard.mirfah.com',
-    'https://mirfah.com',
-    'https://www.mirfah.com'
+    'https://dashboard.mirfah.pk',
+    'https://mirfah.pk',
+    'https://www.mirfah.pk'
 ];
 
 // ✅ CORS middleware
