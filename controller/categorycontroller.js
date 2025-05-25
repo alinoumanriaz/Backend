@@ -1,6 +1,6 @@
 import db from "../database/database.js"
 import { v2 as cloudinary } from 'cloudinary';
-import { getRedisClient } from "../client.js";
+// import { getRedisClient } from "../client.js";
 import env from "dotenv";
 env.config()
 
@@ -35,8 +35,8 @@ const addCategory = async (req, res) => {
 
         await db.query('INSERT INTO category_images ( imageUrl, categoryId ) value (?,?)', [imageUrl, categoryId])
 
-        const client = await getRedisClient()
-        await client.del('categoryList')
+        // const client = await getRedisClient()
+        // await client.del('categoryList')
 
 
         return res.status(200).json({ message: 'Category added successfully' });
@@ -52,14 +52,14 @@ const categoryList = async (req, res) => {
 
     try {
 
-        const cacheKey = 'categoryList';
-        const client = await getRedisClient()
+        // const cacheKey = 'categoryList';
+        // const client = await getRedisClient()
         // 1️⃣ Check Redis cache first
-        const cachedData = await client.get(cacheKey);
-        if (cachedData) {
-            console.log('✅ Returning category list from Redis');
-            return res.status(200).json({ categoryList: JSON.parse(cachedData) });
-        }
+        // const cachedData = await client.get(cacheKey);
+        // if (cachedData) {
+        //     console.log('✅ Returning category list from Redis');
+        //     return res.status(200).json({ categoryList: JSON.parse(cachedData) });
+        // }
 
 
         // Fetch all categories with their image and icon details
@@ -94,7 +94,7 @@ const categoryList = async (req, res) => {
         }));
 
         // 3️⃣ Save to Redis
-        await client.set(cacheKey, JSON.stringify(result));
+        // await client.set(cacheKey, JSON.stringify(result));
 
         // Send the response
         return res.status(200).json({ categoryList: result });
@@ -109,8 +109,8 @@ const categoryDelete = async (req, res) => {
     try {
         const categoryId = req.params.id
         await db.query('DELETE FROM categories WHERE id = ?', [categoryId])
-        const client = await getRedisClient()
-        await client.del('categoryList')
+        // const client = await getRedisClient()
+        // await client.del('categoryList')
         return res.status(200).json({ message: 'category deleted successfully' })
     } catch (error) {
         console.error('Error in delete category', error)
@@ -127,13 +127,13 @@ const editCategory = async (req, res) => {
             if (imageUrl) {
                 await db.query(`UPDATE category_images SET imageUrl=? WHERE categoryId=? `, [imageUrl, id])
 
-                const client = await getRedisClient()
-                await client.del('categoryList')
+                // const client = await getRedisClient()
+                // await client.del('categoryList')
 
                 return res.status(200).json({ message: 'category edit successfully' })
             }
-            const client = await getRedisClient()
-            await client.del('categoryList')
+            // const client = await getRedisClient()
+            // await client.del('categoryList')
             return res.status(200).json({ message: 'category edit successfully' })
         } else {
             await db.query(`UPDATE categories SET name=?, slug=?, parentCategoryId=NULL, description=? WHERE id=?`, [name, slug, description, id])
@@ -141,13 +141,13 @@ const editCategory = async (req, res) => {
 
                 await db.query(`UPDATE category_images SET imageUrl=? WHERE categoryId=? `, [imageUrl, id])
 
-                const client = await getRedisClient()
-                await client.del('categoryList')
+                // const client = await getRedisClient()
+                // await client.del('categoryList')
 
                 return res.status(200).json({ message: 'category edit successfully' })
             }
-            const client = await getRedisClient()
-            await client.del('categoryList')
+            // const client = await getRedisClient()
+            // await client.del('categoryList')
             return res.status(200).json({ message: 'category edit successfully' })
         }
 

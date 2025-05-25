@@ -1,7 +1,7 @@
 import db from "../database/database.js";
 import { v2 as cloudinary } from 'cloudinary';
 import env from "dotenv";
-import { getRedisClient } from "../client.js";
+// import { getRedisClient } from "../client.js";
 env.config()
 // Configuration
 cloudinary.config({
@@ -29,8 +29,8 @@ const addFabric = async (req, res) => {
 
         await db.query('INSERT INTO fabric_images ( imageUrl, fabricId ) value (?,?)', [imageUrl, fabricId])
 
-        const client = await getRedisClient()
-        await client.del('fabricList')
+        // const client = await getRedisClient()
+        // await client.del('fabricList')
 
         return res.status(200).json({ message: 'fabric added successfully' });
 
@@ -43,15 +43,15 @@ const addFabric = async (req, res) => {
 
 const fabricList = async (req, res) => {
     try {
-        const cacheKey = 'fabricList';
-        const client = await getRedisClient();
+        // const cacheKey = 'fabricList';
+        // const client = await getRedisClient();
 
         // 1️⃣ Check Redis cache first
-        const cachedData = await client.get(cacheKey);
-        if (cachedData) {
-            console.log('✅ Returning fabric list from Redis');
-            return res.status(200).json({ fabricList: JSON.parse(cachedData) });
-        }
+        // const cachedData = await client.get(cacheKey);
+        // if (cachedData) {
+        //     console.log('✅ Returning fabric list from Redis');
+        //     return res.status(200).json({ fabricList: JSON.parse(cachedData) });
+        // }
 
         // 2️⃣ Fetch fabric data with images
         const [fabric] = await db.query(`
@@ -81,7 +81,7 @@ const fabricList = async (req, res) => {
         }));
 
         // 4️⃣ Save the fabric list to Redis with an expiration of 1 hour (3600 seconds)
-        await client.set(cacheKey, JSON.stringify(result));
+        // await client.set(cacheKey, JSON.stringify(result));
 
         // 5️⃣ Send the response with fabric list data
         return res.status(200).json({ fabricList: result });
@@ -105,8 +105,8 @@ const fabricDelete = async (req, res) => {
         console.log({ fabricId: fabricId })
         await db.query('DELETE FROM fabric WHERE id = ?', [fabricId])
 
-        const client = await getRedisClient()
-        await client.del('fabricList')
+        // const client = await getRedisClient()
+        // await client.del('fabricList')
 
         return res.status(200).json({ message: 'fabric deleted successfully' })
     } catch (error) {
@@ -123,12 +123,12 @@ const editFabric = async (req, res) => {
 
         if (imageUrl) {
             await db.query(`UPDATE fabric_images SET imageUrl=? WHERE fabricId=? `, [imageUrl, id])
-            const client = await getRedisClient()
-            await client.del('fabricList')
+            // const client = await getRedisClient()
+            // await client.del('fabricList')
             return res.status(200).json({ message: 'fabric edit successfully' })
         }
-        const client = await getRedisClient()
-        await client.del('fabricList')
+        // const client = await getRedisClient()
+        // await client.del('fabricList')
         return res.status(200).json({ message: 'fabric edit successfully' })
 
 

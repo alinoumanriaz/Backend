@@ -211,10 +211,14 @@ const deleteUser = async (req, res) => {
     }
 }
 
+const redirectUri = process.env.NODE_ENV === 'production'
+    ? 'https://www.mirfah.com'
+    : 'http://localhost:3000';
+
 const client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    'https://www.mirfah.com' // ✅ production redirect URI must match the frontend
+    redirectUri // ✅ production redirect URI must match the frontend
 );
 
 const googleLogin = async (req, res) => {
@@ -226,6 +230,7 @@ const googleLogin = async (req, res) => {
 
         // Exchange code for tokens
         const { tokens } = await client.getToken(code);
+        console.log({ tokenstokens: tokens })
         const idToken = tokens.id_token;
 
         if (!idToken) {

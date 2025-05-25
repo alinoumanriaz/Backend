@@ -118,31 +118,58 @@ CREATE TABLE `product_images` (
 CREATE TABLE `orders` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `userId` INT NOT NULL,
-  `totalAmount` DECIMAL(10, 2) NOT NULL,
-  `status` VARCHAR(50) DEFAULT 'pending',
-  `stripePayemntID` VARCHAR(255),
-  `paymentAmount` INT,
+  `username` VARCHAR(255),
+  `email` VARCHAR(255),
+  `phoneNumber` VARCHAR(20),
+  `cardHolderName` VARCHAR(255),
+  `totalAmount` DECIMAL(10,2) NOT NULL,
+  `stripePaymentId` VARCHAR(255),
+  `paymentDeductedAmount` DECIMAL(10,2),
+  `stripePaymentStatus` VARCHAR(255),
   `paymentDate` TIMESTAMP,
-  `shippingAddressId` INT NOT NULL,
-  `paymentStatus` ENUM('Pending','Completed','Failed') DEFAULT Pending,
+  `orderStatus` ENUM('Pending', 'succeeded', 'Failed') DEFAULT 'Pending',
   `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`shippingAddressId`) REFERENCES `shipping_addresses`(`id`)
+  FOREIGN KEY (`userId`) REFERENCES `users`(`id`)
 );
+
+
 
 -- Order Items table (many-to-many relationship between orders and products)
 CREATE TABLE `order_items` (
   `order_item_id` INT AUTO_INCREMENT PRIMARY KEY,
   `orderId` INT NOT NULL,
   `productId` INT NOT NULL,
+  `productSlug` VARCHAR(255),
+  `productName` VARCHAR(255),
+  `productImage` VARCHAR(255),
+  `size` VARCHAR(10),
+  `color` VARCHAR(255),
+  `gender` VARCHAR(10),
   `quantity` INT NOT NULL,
   `unitPrice` INT NOT NULL,
   `totalPrice` INT NOT NULL,
   `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (`orderId`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`productId`) REFERENCES `products`(`id`) ON DELETE CASCADE
+  FOREIGN KEY (`productId`) REFERENCES `products`(`id`)
+);
+
+CREATE TABLE `shipping_addresses` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `orderId` INT,
+  `userId` INT,
+  `fullname` VARCHAR(255) NOT NULL,
+  `street` VARCHAR(255) NOT NULL,
+  `city` VARCHAR(255) NOT NULL,
+  `state` VARCHAR(255) NOT NULL,
+  `postalCode` VARCHAR(50) NOT NULL,
+  `country` VARCHAR(255) NOT NULL,
+  `phone` VARCHAR(50),
+  `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`orderId`) REFERENCES `orders`(`id`)
 );
 
 
@@ -167,20 +194,7 @@ CREATE TABLE `wishlist` (
 );
 
 -- Shipping Addresses table (one-to-many relation with users)
-CREATE TABLE `shipping_addresses` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `userId` INT NOT NULL,
-  `fullname` VARCHAR(255) NOT NULL,
-  `street` VARCHAR(255) NOT NULL,
-  `city` VARCHAR(255) NOT NULL,
-  `state` VARCHAR(255) NOT NULL,
-  `postalCode` VARCHAR(50) NOT NULL,
-  `country` VARCHAR(255) NOT NULL,
-  `phone` VARCHAR(50),
-  `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE
-);
+
 
 -- Payment table (one-to-one relation with orders)
 CREATE TABLE `payments` (
